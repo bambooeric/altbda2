@@ -1,0 +1,3 @@
+LIBRARY	"TstDev"
+EXPORTS
+	DvbDeviceControl=DvbDeviceControl
