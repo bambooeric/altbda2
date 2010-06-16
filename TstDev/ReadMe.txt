@@ -13,6 +13,11 @@ all other         - try 8VSB or 8PSK
 S/S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.1.0.12 - 2010.06.17
+- recompiled with latest Technotrend BDA SDK (1.0.1.21). Now use ttBdaDrvApi_Dll.dll
+- now on Google Code - http://code.google.com/p/altbda2
+----------
+
 v 0.1.0.11 - 2008.01.28
 ----------
 
