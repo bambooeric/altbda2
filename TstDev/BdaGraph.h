@@ -12,6 +12,11 @@
 
 #include <stdio.h>
 
+#include "dwBdaApi.h"
+#include <ttBdaDrvApi.h>
+#include "THIOCtrl.h"
+
+
 // defaults for tune request
 #define DEFAULT_FREQUENCY_C		394000L
 #define DEFAULT_FREQUENCY_S		11766000L
@@ -26,6 +31,7 @@
 #define DEFAULT_INVERSION_S		BDA_SPECTRAL_INVERSION_AUTOMATIC
 #define DEFAULT_INVERSION_T		BDA_SPECTRAL_INVERSION_NORMAL
 #define DEFAULT_POLARISATION	BDA_POLARISATION_LINEAR_V
+#define DEFAULT_FEC				BDA_BCC_RATE_NOT_SET
 #define DEFAULT_LOW_OSCILLATOR	9750000L
 #define DEFAULT_HIGH_OSCILLATOR	10600000L
 #define DEFAULT_LNB_SWITCH		11700000L
@@ -72,7 +78,8 @@ public:
 		ModulationType ModType,
 		LONG SymRate,
 		LONG PosOpt,
-		Polarisation Pol);
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec);
 	HRESULT DVBS_TT_Tune(
 		ULONG LowBandF,
 		ULONG HighBandF,
@@ -81,7 +88,32 @@ public:
 		SpectralInversion SpectrInv,
 		ModulationType ModType,
 		LONG SymRate,
-		Polarisation Pol);
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec,
+		BOOLEAN RawDiSEqC,
+		LONG PosOpt);
+	HRESULT DVBS_TeVii_Tune(
+		ULONG LowBandF,
+		ULONG HighBandF,
+		ULONG SwitchF,
+		ULONG Frequency,
+		SpectralInversion SpectrInv,
+		ModulationType ModType,
+		LONG SymRate,
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec);
+	HRESULT DVBS_DvbWorld_Tune(
+		ULONG LowBandF,
+		ULONG HighBandF,
+		ULONG SwitchF,
+		ULONG Frequency,
+		SpectralInversion SpectrInv,
+		ModulationType ModType,
+		LONG SymRate,
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec,
+		UINT diseqc_port,
+		UINT tone_burst);
 	HRESULT DVBS_Hauppauge_Tune(
 		ULONG LowBandF,
 		ULONG HighBandF,
@@ -90,12 +122,26 @@ public:
 		SpectralInversion SpectrInv,
 		ModulationType ModType,
 		LONG SymRate,
-		LONG PosOpt,
 		Polarisation Pol,
-		DWORD RollOff,
+		BinaryConvolutionCodeRate Fec,
 		DWORD S2RollOff,
 		DWORD S2Pilot,
-		BOOLEAN RawDiSEqC);
+		BOOLEAN RawDiSEqC,
+		LONG PosOpt);
+	HRESULT DVBS_Conexant_Tune(
+		ULONG LowBandF,
+		ULONG HighBandF,
+		ULONG SwitchF,
+		ULONG Frequency,
+		SpectralInversion SpectrInv,
+		ModulationType ModType,
+		LONG SymRate,
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec,
+		DWORD S2RollOff,
+		DWORD S2Pilot,
+		BOOLEAN RawDiSEqC,
+		LONG PosOpt);
 	HRESULT DVBT_Tune(
 		ULONG Frequency,
 		ULONG Bandwidth);
@@ -103,17 +149,34 @@ public:
 		ULONG Frequency,
 		LONG SymRate,
 		ModulationType ModType);
+
 	HRESULT GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
-	HRESULT DVBS_Hauppauge_DiSEqC(BYTE, BYTE *);
+	HRESULT GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
+	HRESULT DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE tb);
+	HRESULT DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Conexant_LNBPower (BOOL bPower);
+	HRESULT DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Turbosight_LNBPower (BOOL bPower);
+	HRESULT DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Twinhan_LNBPower(BOOL bPower);
+	HRESULT DVBS_Twinhan_LNBSource (BYTE Port, BYTE ToneBurst);
+	HRESULT DVBS_DvbWorld_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Omicom_ToneBurst(BYTE tb);
+	HRESULT DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+
 	void SetStreamCallbackProcedure(STR_CB_PROC);
 
 private:
+	HRESULT GetTunerPath(int idx, char* pTunerPath);
 	HRESULT AddGraphToROT(IUnknown *pUnkGraph, DWORD *pdwRegister);
 	HRESULT RemoveGraphFromROT(DWORD pdwRegister);
 	void ReportMessage(char *text);
 	HRESULT GetPin( IBaseFilter * pFilter, PIN_DIRECTION dirrequired, int iNum, IPin **ppPin);
 	IPin *GetInPin( IBaseFilter * pFilter, int nPin );
 	IPin *GetOutPin( IBaseFilter * pFilter, int nPin );
+    HRESULT GetPinMedium(IPin* pPin, REGPINMEDIUM* pMedium);
 
 	DWORD			m_dwGraphRegister;		//registration number for the RunningObjectTable
 	IFilterGraph2	*m_pFilterGraph;		// for current graph
@@ -124,9 +187,26 @@ private:
 	IMediaControl	*m_pMediaControl;		// media control
 	CCallbackFilter	*pCallbackInstance;		// callback filter object
 	IKsPropertySet	*m_pProprietaryInterface;	// tuner's proprietary interface
+	IKsControl		*m_pTunerControl;		// IKsControl for tuner
+
 	CDVBNetworkProviderFilter *pNetworkProviderInstance; // network provider object
 
 	MSG_CB_PROC message_callback;
+	HANDLE hTT, hDW;
+	int iTVIdx;
+
+	//THBDA Ioctl functions
+	BOOL THBDA_IOControl( DWORD  dwIoControlCode,
+		LPVOID lpInBuffer,
+		DWORD  nInBufferSize,
+		LPVOID lpOutBuffer,
+		DWORD  nOutBufferSize,
+		LPDWORD lpBytesReturned);
+	BOOL THBDA_IOCTL_CHECK_INTERFACE_Fun(void);
+	BOOL THBDA_IOCTL_SET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA);
+	BOOL THBDA_IOCTL_GET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA);
+	BOOL THBDA_IOCTL_SET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA);
+	BOOL THBDA_IOCTL_GET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA);
 };
 
 #endif /* BDAGRAPH_H */

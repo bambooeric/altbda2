@@ -1,6 +1,11 @@
 #include "stdafx.h"
 
 #include "BdaGraph.h"
+#include "cxtbda.h"
+#include "omcbda.h"
+#include <TeVii.h>
+
+#define Z(a) memset(&a, 0, sizeof(a))
 
 CBdaGraph::CBdaGraph()
 {
@@ -12,9 +17,12 @@ CBdaGraph::CBdaGraph()
 	m_pReceiver = NULL;
 	m_pCallbackFilter = NULL;
 	m_pProprietaryInterface = NULL;
+	m_pTunerControl = NULL;
 	m_pMediaControl = NULL;
 	pCallbackInstance = NULL;
 	pNetworkProviderInstance = NULL;
+	hTT = hDW =  INVALID_HANDLE_VALUE;
+	iTVIdx = -1;
 }
 
 CBdaGraph::~CBdaGraph()
@@ -63,6 +71,7 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 					// Display the name in your UI somehow.
 					BSTR bStr = varName.bstrVal;
 					WideCharToMultiByte(CP_ACP, 0, bStr, -1, Tuners->Tuner[Tuners->Count].Name, sizeof(Tuners->Tuner[Tuners->Count].Name), NULL, NULL);
+
 					// check the BDA tuner type and availability
 					// To create an instance of the filter, do the following:
 					IBaseFilter *pFilter;
@@ -103,6 +112,51 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 	return hr;
 }
 
+HRESULT CBdaGraph::GetTunerPath(int idx, char* pTunerPath)
+{
+	// Create the System Device Enumerator.
+	HRESULT hr;
+	ICreateDevEnum *pSysDevEnum = NULL;
+	hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+		IID_ICreateDevEnum, (void **)&pSysDevEnum);
+	if (FAILED(hr))
+	{
+		DebugLog("BDA2: GetTunerPath: Failed creating Device Enumerator");
+		return hr;
+	}
+
+	// Obtain a class enumerator for the BDA tuner category.
+	IEnumMoniker *pEnumCat = NULL;
+	hr = pSysDevEnum->CreateClassEnumerator(KSCATEGORY_BDA_NETWORK_TUNER, &pEnumCat, 0);
+
+	if (hr == S_OK) 
+	{
+		// Enumerate the monikers.
+		IMoniker *pMoniker = NULL;
+		ULONG cFetched;
+		int i = 0;
+
+		while((pEnumCat->Next(1, &pMoniker, &cFetched) == S_OK) && (i < 8))
+		{
+			++i;
+			if (i==idx)
+			{
+				LPOLESTR pszName;
+				hr = pMoniker->GetDisplayName(NULL, NULL, &pszName);
+				WideCharToMultiByte(CP_ACP, 0, pszName, -1, pTunerPath, MAX_PATH, 0, 0);
+				CoTaskMemFree((void*)pszName);
+				pMoniker->Release();
+				break;
+			}			
+		}
+		pEnumCat->Release();
+	}
+	else
+		DebugLog("BDA2: GetTunerPath: Failed creating KSCATEGORY_BDA_NETWORK_TUNER class enumerator");
+
+	pSysDevEnum->Release();
+	return hr;
+}
 
 HRESULT CBdaGraph::GetNetworkTunerType(IBaseFilter *pFilter, GUID *type)
 {
@@ -314,10 +368,39 @@ IPin *CBdaGraph::GetOutPin( IBaseFilter * pFilter, int nPin ) {
 	return pComPin;
 }
 
+HRESULT CBdaGraph::GetPinMedium(IPin* pPin, REGPINMEDIUM* pMedium)
+{
+	if ( pPin == NULL || pMedium == NULL )
+		return E_POINTER;
+
+	CComPtr <IKsPin> pKsPin;
+    KSMULTIPLE_ITEM *pmi;
+
+    HRESULT hr = pPin->QueryInterface(IID_IKsPin, (void **)&pKsPin);
+    if ( FAILED(hr) )
+        return hr;  // Pin does not support IKsPin.
+
+    hr = pKsPin->KsQueryMediums(&pmi);
+    if ( FAILED(hr) )
+        return hr;  // Pin does not support mediums.
+
+    if ( pmi->Count )
+    {
+        // Use pointer arithmetic to reference the first medium structure.
+        REGPINMEDIUM *pTemp = (REGPINMEDIUM*)(pmi + 1);
+        memcpy(pMedium, pTemp, sizeof(REGPINMEDIUM));
+    }
+
+    CoTaskMemFree(pmi);
+
+    return S_OK;
+}
+
 HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *VendorSpecific)
 {
 	char text[128];
 	BSTR friendly_name_receiver;
+	char receiver_name[128];
 
 	HRESULT hr;
 
@@ -378,7 +461,6 @@ ReportMessage(text);
 	}
 	else
 	{
-		char receiver_name[64];
 		// Display the name in your UI somehow.
 		WideCharToMultiByte(CP_ACP, 0, friendly_name_tuner, -1, receiver_name, sizeof(receiver_name), NULL, NULL);
 		sprintf(text,"BDA2: BuildGraph: Added ID #%d '%s' Tuner filter to the graph",
@@ -401,8 +483,9 @@ ReportMessage(text);
 		ReportMessage(text);
 		return E_FAIL;
 	}
-sprintf(text,"BDA2: BuildGraph: Connecting Network Provider with the Tuner filter");
-ReportMessage(text);
+	sprintf(text,"BDA2: BuildGraph: Connecting Network Provider with the Tuner filter");
+	ReportMessage(text);
+
 	hr = m_pFilterGraph->ConnectDirect(m_pP1, m_pP2, NULL);
 	if(FAILED(hr))
 	{
@@ -410,26 +493,145 @@ ReportMessage(text);
 		ReportMessage(text);
 		return hr;
 	}
-sprintf(text,"BDA2: BuildGraph: Connected Network Provider with the Tuner filter");
-ReportMessage(text);
-	// let's look if Tuner exposes proprietary interfaces
+	sprintf(text,"BDA2: BuildGraph: Connected Network Provider with the Tuner filter");
+	ReportMessage(text);
+
 	*VendorSpecific = VENDOR_SPECIFIC(PURE_BDA);
+
+	// Technotrend check
+	DEVICE_CAT TTDevCat=UNKNOWN;
+	if ( strstr(receiver_name, BDG2_NAME_S_TUNER) ||
+		strstr(receiver_name, BDG2_NAME_C_TUNER) ||
+		strstr(receiver_name, BDG2_NAME_T_TUNER) ||
+		strstr(receiver_name, BDG2_NAME_S_TUNER_FAKE) ||
+		strstr(receiver_name, BDG2_NAME_C_TUNER_NEW) ||
+		strstr(receiver_name, BDG2_NAME_S_TUNER_NEW) ||
+		strstr(receiver_name, BDG2_NAME_T_TUNER_NEW) )
+		TTDevCat=BUDGET_2;
+	if ( strstr(receiver_name, BUDGET3NAME_TUNER) ||
+		strstr(receiver_name,  BUDGET3NAME_ATSC_TUNER) )
+		TTDevCat=BUDGET_3;
+	if ( strstr(receiver_name, USB2BDA_DVB_NAME_S_TUNER) ||
+		strstr(receiver_name, USB2BDA_DVB_NAME_C_TUNER) ||
+		strstr(receiver_name, USB2BDA_DVB_NAME_T_TUNER) ||
+		strstr(receiver_name, USB2BDA_DVB_NAME_S_TUNER_FAKE) )
+		TTDevCat=USB_2;
+	if ( strstr(receiver_name, USB2BDA_DVBS_NAME_PIN) )
+		TTDevCat=USB_2_PINNACLE;
+	if ( strstr(receiver_name, USB2BDA_DSS_NAME_TUNER) )
+		TTDevCat=USB_2_DSS;
+	if ( strstr(receiver_name, PREMIUM_NAME_DIGITAL_TUNER) )
+		TTDevCat=PREMIUM;
+
+	m_pP1 = GetOutPin(m_pTunerDevice, 0);
+	if ( m_pP1 && (TTDevCat!=UNKNOWN) )
+	{
+		DebugLog("BDA2: BuildGraph: checking for Technotrend DiSEqC interface");
+		REGPINMEDIUM Medium;
+		memset(&Medium, 0, sizeof(Medium));//CLSID clsMedium; DWORD dw1; DWORD dw2;
+		if (GetPinMedium(m_pP1, &Medium) == S_OK)
+		{
+			hTT = bdaapiOpenHWIdx(TTDevCat,Medium.dw1);
+			if (INVALID_HANDLE_VALUE!=hTT)
+			{
+				DebugLog("BDA2: BuildGraph: found Technotrend DiSEqC interface");
+				*VendorSpecific = VENDOR_SPECIFIC(TT_BDA);
+			}
+		}
+		else
+			DebugLog("BDA2: BuildGraph: Can't get Tuner pin medium");
+	}
+
+	CComPtr <IKsObject> m_piKsObject; //KsObject Interface
+	hr = m_pTunerDevice->QueryInterface(IID_IKsObject,(void**)&m_piKsObject);
+	if SUCCEEDED(hr)
+	{
+		hDW = m_piKsObject->KsGetObjectHandle();
+		DW_ID InfoDW;
+		if SUCCEEDED(dwBDAGetDeviceID(hDW, &InfoDW))
+		{
+			DebugLog("BDA2: BuildGraph: found DvbWorld DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(DW_BDA);
+		}
+	}
+
+	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pProprietaryInterface);
-	if(SUCCEEDED(hr))
+	if (hr==S_OK)
 	{
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");
 		ReportMessage(text);
 		DWORD supported;
 		// Hauppauge
 		DebugLog("BDA2: BuildGraph: checking for Hauppauge DiSEqC interface");
-		hr = m_pProprietaryInterface->QuerySupported(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_DISEQC), &supported);
+		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
 		if(SUCCEEDED(hr) && supported)
 		{
 			DebugLog("BDA2: BuildGraph: found Hauppauge DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(HAUP_BDA);
 		}
+		// Conexant
+		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
+			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Conexant DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(CXT_BDA);
+		}
+		// Turbosight
+		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
+			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (!(supported & KSPROPERTY_SUPPORT_SET)) )
+		{
+			DebugLog("BDA2: BuildGraph: found Turbosight DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
+		}
+		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
+		{
+			DebugLog("BDA2: BuildGraph: found Twinhan DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(TH_BDA);
+		}
 	}
+
+	m_pTunerControl = NULL;
+	hr = m_pTunerDevice->QueryInterface(IID_IKsControl,(void**)&m_pTunerControl);
+	if (hr==S_OK)
+	{
+		KSPROPERTY prop;
+		ULONG bytesReturned = 0;
+		DWORD supported = 0;
+		Z(prop);
+
+		prop.Set = KSPROPSETID_OMCDiSEqCProperties;
+		prop.Id = KSPROPERTY_OMC_DISEQC_WRITE;
+		prop.Flags = KSPROPERTY_TYPE_BASICSUPPORT;
+		hr = m_pTunerControl->KsProperty(&prop,sizeof(prop),
+			(void*)&supported, sizeof(supported),&bytesReturned);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
+		}
+	}
+
+	char receiver_path[MAX_PATH];
+	hr = GetTunerPath(selected_device_enum, receiver_path);
+	int m = FindDevices();
+	for (int i=0; i<m; i++)
+		if ( (!strcmp(receiver_name,GetDeviceName(i))) && (!strcmp(receiver_path,GetDevicePath(i))) )
+		{
+			if (OpenDevice(i,NULL,NULL))
+			{
+				DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
+				*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
+				iTVIdx=i;
+			}
+			else
+				DebugLog("BDA2: BuildGraph: Can't open TeVii device interface");
+			break;
+		}
+
 	hr = S_OK;
 	pCallbackInstance = new CCallbackFilter(NULL, &hr);
 	if (pCallbackInstance == NULL || FAILED(hr))
@@ -522,8 +724,8 @@ ReportMessage(text);
 							return hr;
 						}
 						// add potential receiver to the graph
-sprintf(text,"BDA2: BuildGraph: Adding potential Receiver (%s) to graph", receiver_name);
-ReportMessage(text);
+						sprintf(text,"BDA2: BuildGraph: Adding potential Receiver (%s) to graph", receiver_name);
+						ReportMessage(text);
 						hr = m_pFilterGraph->AddFilter(m_pFilter, friendly_name_receiver);
 						if(FAILED(hr))
 						{
@@ -531,8 +733,8 @@ ReportMessage(text);
 							ReportMessage(text);
 							return hr;
 						}
-sprintf(text,"BDA2: BuildGraph: Added potential Receiver (%s) to graph", receiver_name);
-ReportMessage(text);
+						sprintf(text,"BDA2: BuildGraph: Added potential Receiver (%s) to graph", receiver_name);
+						ReportMessage(text);
 						pMoniker->Release();
 						// connect Tuner with potential Receiver
 						m_pP1 = GetOutPin(m_pTunerDevice, 0);
@@ -653,6 +855,13 @@ void CBdaGraph::CloseGraph()
 {
 	if(m_pFilterGraph == NULL)
 		return;
+
+	if (hTT!=INVALID_HANDLE_VALUE)
+		bdaapiClose(hTT);
+
+	if (iTVIdx!=-1)
+		CloseDevice(iTVIdx);
+
 	if(m_pMediaControl)
 	{
 		m_pMediaControl->Stop();
@@ -688,6 +897,11 @@ void CBdaGraph::CloseGraph()
 		m_pProprietaryInterface->Release();
 		m_pProprietaryInterface = NULL;
 	}
+	if(m_pTunerControl)
+	{
+		m_pTunerControl->Release();
+		m_pTunerControl = NULL;
+	}
 #ifdef _DEBUG
 	if(m_dwGraphRegister)
 	{
@@ -718,7 +932,8 @@ HRESULT CBdaGraph::DVBS_Tune(
 			ModulationType ModType,
 			LONG SymRate,
 			LONG PosOpt,
-			Polarisation Pol)
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec)
 {
 	if(pNetworkProviderInstance)
 		return pNetworkProviderInstance->DoDVBSTuning(
@@ -730,7 +945,8 @@ HRESULT CBdaGraph::DVBS_Tune(
 			ModType,
 			SymRate,
 			PosOpt,
-			Pol);
+			Pol,
+			Fec);
 	else
 		return E_FAIL;
 }
@@ -743,20 +959,159 @@ HRESULT CBdaGraph::DVBS_TT_Tune(
 			SpectralInversion SpectrInv,
 			ModulationType ModType,
 			LONG SymRate,
-			Polarisation Pol)
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec,
+			BOOLEAN RawDiSEqC,
+			LONG PosOpt)
 {
 	if(pNetworkProviderInstance)
-		return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
-			LowBandF,
-			HighBandF,
-			SwitchF,
-			Frequency,
-			SpectrInv,
-			ModType,
-			SymRate,
-			Pol);
+		if(RawDiSEqC)
+			return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
+				LowBandF,
+				HighBandF,
+				SwitchF,
+				Frequency,
+				SpectrInv,
+				ModType,
+				SymRate,
+				Pol,
+				Fec);
+		else
+			return pNetworkProviderInstance->DoDVBSTuning(
+				LowBandF,
+				HighBandF,
+				SwitchF,
+				Frequency,
+				SpectrInv,
+				ModType,
+				SymRate,
+				PosOpt,
+				Pol,
+				Fec);
+	return E_FAIL;
+}
+
+HRESULT CBdaGraph::DVBS_TeVii_Tune(
+			ULONG LowBandF,
+			ULONG HighBandF,
+			ULONG SwitchF,
+			ULONG Frequency,
+			SpectralInversion SpectrInv,
+			ModulationType ModType,
+			LONG SymRate,
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec
+			)
+{
+	if (iTVIdx<0)
+		return E_FAIL;
+
+	TPolarization TVPol;
+	switch(Pol)
+	{
+	case BDA_POLARISATION_LINEAR_H:
+	case BDA_POLARISATION_CIRCULAR_L:
+		TVPol=TPol_Horizontal;break;
+	case BDA_POLARISATION_LINEAR_V:
+	case BDA_POLARISATION_CIRCULAR_R:
+		TVPol=TPol_Vertical;break;
+	default:
+		TVPol=TPol_None;
+	}
+
+	TMOD TVMod;
+	switch (ModType)
+	{
+	case BDA_MOD_QPSK:
+		TVMod=TMOD_QPSK;break;
+	case BDA_MOD_BPSK:
+		TVMod=TMOD_BPSK;break;
+	case BDA_MOD_16QAM:
+		TVMod=TMOD_16QAM;break;
+	case BDA_MOD_32QAM:
+		TVMod=TMOD_32QAM;break;
+	case BDA_MOD_64QAM:
+		TVMod=TMOD_64QAM;break;
+	case BDA_MOD_128QAM:
+		TVMod=TMOD_128QAM;break;
+	case BDA_MOD_256QAM:
+		TVMod=TMOD_256QAM;break;
+	case BDA_MOD_8VSB:
+		TVMod=TMOD_8VSB;break;
+	case BDA_MOD_NBC_QPSK:
+		TVMod=TMOD_DVBS2_QPSK;break;
+	case BDA_MOD_NBC_8PSK:
+	case BDA_MOD_8PSK:
+		TVMod=TMOD_DVBS2_8PSK;break;
+	case BDA_MOD_16APSK:
+		TVMod=TMOD_DVBS2_16PSK;break;
+	case BDA_MOD_32APSK:
+		TVMod=TMOD_DVBS2_32PSK;break;
+	default:
+		TVMod=TMOD_AUTO;
+	}
+
+	TFEC TVFec;
+	switch(Fec)
+	{
+	case BDA_BCC_RATE_1_2:
+		TVFec=TFEC_1_2;
+	case BDA_BCC_RATE_2_3:
+		TVFec=TFEC_2_3;
+	case BDA_BCC_RATE_3_4:
+		TVFec=TFEC_3_4;
+	case BDA_BCC_RATE_4_5:
+		TVFec=TFEC_4_5;
+	case BDA_BCC_RATE_5_6:
+		TVFec=TFEC_5_6;
+	case BDA_BCC_RATE_6_7:
+		TVFec=TFEC_6_7;
+	case BDA_BCC_RATE_7_8:
+		TVFec=TFEC_7_8;
+	case BDA_BCC_RATE_8_9:
+		TVFec=TFEC_8_9;
+	case BDA_BCC_RATE_9_10:
+		TVFec=TFEC_9_10;
+	default:
+		TVFec=TFEC_AUTO;
+	}
+
+	if (TuneTransponder(iTVIdx, Frequency, SymRate*1000, Frequency > SwitchF ? HighBandF:LowBandF, TVPol,
+		Frequency > SwitchF, TVMod, TVFec))
+		return S_OK;
 	else
 		return E_FAIL;
+}
+
+HRESULT CBdaGraph::DVBS_DvbWorld_Tune(
+			ULONG LowBandF,
+			ULONG HighBandF,
+			ULONG SwitchF,
+			ULONG Frequency,
+			SpectralInversion SpectrInv,
+			ModulationType ModType,
+			LONG SymRate,
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec,
+			UINT diseqc_port,
+			UINT tone_burst )
+{
+	if (INVALID_HANDLE_VALUE==hDW)
+		return E_FAIL;
+
+	UINT pol=0;
+	switch(Pol)
+	{
+	case BDA_POLARISATION_LINEAR_H:
+	case BDA_POLARISATION_CIRCULAR_L:
+		pol=1;break;
+	case BDA_POLARISATION_LINEAR_V:
+	case BDA_POLARISATION_CIRCULAR_R:
+		pol=0;break;
+	}
+
+	return dwBDATune(hDW,Frequency,SymRate,Frequency > SwitchF ? HighBandF:LowBandF,pol,Frequency > SwitchF,Fec,
+		ModType,diseqc_port,tone_burst);
 }
 
 HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
@@ -767,85 +1122,24 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			SpectralInversion SpectrInv,
 			ModulationType ModType,
 			LONG SymRate,
-			LONG PosOpt,
 			Polarisation Pol,
-			DWORD RollOff,
+			BinaryConvolutionCodeRate Fec,
 			DWORD S2RollOff,
 			DWORD S2Pilot,
-			BOOLEAN RawDiSEqC)
+			BOOLEAN RawDiSEqC,
+			LONG PosOpt)
 {
 	DWORD ret_len;
 	DWORD instance[1024];
 	char text[256];
 	HRESULT hr;
 
-	if(ModType == BDA_MOD_QPSK || ModType == BDA_MOD_NOT_DEFINED)
-	{
-		// DVB-S
-		// set Pilot to OFF
-/*		tmp_dword = 0;
-		hr = m_pProprietaryInterface->Set(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_PILOT),
-			instance, sizeof(instance), &tmp_dword, sizeof(tmp_dword));
-		if(FAILED(hr))
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): failed setting Pilot to OFF (hr=0x%8.8x)",hr);
-			ReportMessage(text);
-//			return E_FAIL;
-		}
-		else
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): set Pilot to OFF");
-			ReportMessage(text);
-		}
-		// set Roll Off
-		hr = m_pProprietaryInterface->Set(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_ROLL_OFF),
-			instance, sizeof(instance), &RollOff, sizeof(RollOff));
-		if(FAILED(hr))
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): failed setting RollOff to #%d (hr=0x%8.8x)", RollOff, hr);
-			ReportMessage(text);
-//			return E_FAIL;
-		}
-		else
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): set RollOff to #%d", RollOff);
-			ReportMessage(text);
-		}*/
-/*		hr = m_pProprietaryInterface->Get(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_PILOT),
-			instance, sizeof(instance), &tmp_dword, sizeof(tmp_dword), &ret_len);
-		if(FAILED(hr))
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): failed getting Pilot (hr=0x%8.8x)",hr);
-			ReportMessage(text);
-		}
-		else
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): get Pilot 0x%8.8x", tmp_dword);
-			ReportMessage(text);
-		}
-		hr = m_pProprietaryInterface->Get(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_ROLL_OFF),
-			instance, sizeof(instance), &RollOff, sizeof(RollOff), &ret_len);
-		if(FAILED(hr))
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): failed getting RollOff (hr=0x%8.8x)", hr);
-			ReportMessage(text);
-		}
-		else
-		{
-			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (QPSK): get RollOff: 0x%8.8x", RollOff);
-			ReportMessage(text);
-		}*/
-	}
-	else
+	if(ModType == BDA_MOD_8PSK)
 	{
 		// DVB-S2
 		// set Pilot
-		hr = m_pProprietaryInterface->Set(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_PILOT),
+		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+			KSPROPERTY_BDA_PILOT_HAUP,
 			instance, 32, &S2Pilot, sizeof(S2Pilot));
 		if(FAILED(hr))
 		{
@@ -858,8 +1152,8 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (8PSK): set Pilot to %d", S2Pilot);
 			ReportMessage(text);
 		}
-		hr = m_pProprietaryInterface->Get(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_PILOT),
+		hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+			KSPROPERTY_BDA_PILOT_HAUP,
 			instance, 32, &S2Pilot, sizeof(S2Pilot), &ret_len);
 		if(FAILED(hr))
 		{
@@ -872,8 +1166,8 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			ReportMessage(text);
 		}
 		// set Roll Off
-		hr = m_pProprietaryInterface->Set(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_ROLL_OFF),
+		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+			KSPROPERTY_BDA_ROLLOFF_HAUP,
 			instance, 32, &S2RollOff, sizeof(S2RollOff));
 		if(FAILED(hr))
 		{
@@ -886,8 +1180,8 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (8PSK): set RollOff to %d", S2RollOff);
 			ReportMessage(text);
 		}
-		hr = m_pProprietaryInterface->Get(CLSID_HauppaugeBdaTunerExtension,
-			HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_ROLL_OFF),
+		hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+			KSPROPERTY_BDA_ROLLOFF_HAUP,
 			instance, 32, &S2RollOff, sizeof(S2RollOff), &ret_len);
 		if(FAILED(hr))
 		{
@@ -910,7 +1204,8 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 				SpectrInv,
 				ModType,
 				SymRate,
-				Pol);
+				Pol,
+				Fec);
 		else
 			return pNetworkProviderInstance->DoDVBSTuning(
 				LowBandF,
@@ -921,7 +1216,101 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 				ModType,
 				SymRate,
 				PosOpt,
-				Pol);
+				Pol,
+				Fec);
+	return E_FAIL;
+}
+
+HRESULT CBdaGraph::DVBS_Conexant_Tune(
+			ULONG LowBandF,
+			ULONG HighBandF,
+			ULONG SwitchF,
+			ULONG Frequency,
+			SpectralInversion SpectrInv,
+			ModulationType ModType,
+			LONG SymRate,
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec,
+			DWORD S2RollOff,
+			DWORD S2Pilot,
+			BOOLEAN RawDiSEqC,
+			LONG PosOpt)
+{
+	char text[256];
+	HRESULT hr;
+
+	if(ModType == BDA_MOD_8PSK)
+	{
+		// DVB-S2
+		BDA_NBC_PARAMS NBCMessageParams;
+		switch (S2Pilot)
+		{
+		case PILOT_OFF:
+			NBCMessageParams.pilot = PHANTOM_PILOT_OFF;
+			break;
+		case PILOT_ON:
+			NBCMessageParams.pilot = PHANTOM_PILOT_OFF;
+			break;
+		default:
+			NBCMessageParams.pilot = PHANTOM_PILOT_UNKNOWN;
+		}
+
+		switch (S2RollOff)
+		{
+		case ROLLOFF_20:
+			NBCMessageParams.rolloff = PHANTOM_ROLLOFF_020;
+			break;
+		case ROLLOFF_25:
+			NBCMessageParams.rolloff = PHANTOM_ROLLOFF_025;
+			break;
+		case ROLLOFF_35:
+			NBCMessageParams.rolloff = PHANTOM_ROLLOFF_035;
+			break;
+		default:
+			NBCMessageParams.pilot = PHANTOM_PILOT_UNKNOWN;
+		}
+
+		KSPROPERTY instance_data;
+
+		// set NBC Params
+		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionProperties,
+			KSPROPERTY_BDA_NBC_PARAMS,
+			&instance_data, sizeof(instance_data), &NBCMessageParams, sizeof(NBCMessageParams));
+		if FAILED(hr)
+		{
+			sprintf(text,"BDA2: DVBS_Conexant_Tune (8PSK): failed setting Pilot, RollOff to (hr=0x%8.8x)", hr);
+			ReportMessage(text);
+		}
+		else
+		{
+			sprintf(text,"BDA2: DVBS_Conexant_Tune (8PSK): set Pilot, RollOff");
+			ReportMessage(text);
+		}
+	}
+	if(pNetworkProviderInstance)
+		if(RawDiSEqC)
+			return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
+				LowBandF,
+				HighBandF,
+				SwitchF,
+				Frequency,
+				SpectrInv,
+				ModType,
+				SymRate,
+				Pol,
+				Fec);
+		else
+			return pNetworkProviderInstance->DoDVBSTuning(
+				LowBandF,
+				HighBandF,
+				SwitchF,
+				Frequency,
+				SpectrInv,
+				ModType,
+				SymRate,
+				PosOpt,
+				Pol,
+				Fec);
 	return E_FAIL;
 }
 
@@ -954,36 +1343,203 @@ HRESULT CBdaGraph::GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG
 		return E_FAIL;
 }
 
-HRESULT CBdaGraph::DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+HRESULT CBdaGraph::GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality)
 {
-	int i;
-	BYTE buf[188]; // DISEQC_MESSAGE_PARAMS
-	HRESULT hr;
+	if (iTVIdx<0)
+		return E_FAIL;
+
+	DWORD Strength, Quality;
+	BOOL Lock;
+	if (GetSignalStatus(iTVIdx, &Lock, &Strength, &Quality))
+	{
+		*pLocked=Lock;
+		*pStrength=Strength;
+		*pQuality=Quality;
+		*pPresent=TRUE;
+		return S_OK;
+	}
+	else
+		return E_FAIL;
+}
+
+char* ErrorMessageTTBDA ( TYPE_RET_VAL err )
+{
+	char *err_str;
+	switch ( err )
+	{
+	case RET_SUCCESS:
+		return NULL;
+	case RET_NOT_IMPL:
+		err_str = "operation is not implemented for the opened handle";
+		break;
+	case RET_NOT_SUPPORTED:
+    	err_str = "operation is not supported for the opened handle";
+		break;
+	case RET_ERROR_HANDLE:
+    	err_str = "the given HANDLE seems not to be correct";
+		break;
+	case RET_IOCTL_NO_DEV_HANDLE:
+    	err_str = "the internal IOCTL subsystem has no device handle";
+		break;
+	case RET_IOCTL_FAILED:
+        err_str = "the internal IOCTL failed";
+		break;
+	case RET_IR_ALREADY_OPENED:
+        err_str = "the infrared interface is already initialised";
+		break;
+	case RET_IR_NOT_OPENED:
+        err_str = "the infrared interface is not initialised";
+		break;
+	case RET_TO_MANY_BYTES:
+		err_str = "length exceeds maximum in EEPROM-Userspace operation";
+		break;
+	case RET_CI_ERROR_HARDWARE:
+		err_str = "common interface hardware error";
+		break;
+	case RET_CI_ALREADY_OPENED:
+		err_str = "common interface already opened";
+		break;
+	case RET_TIMEOUT:
+		err_str = "operation finished with timeout";
+		break;
+	case RET_READ_PSI_FAILED:
+		err_str = "read psi failed";
+		break;
+	case RET_NOT_SET:
+		err_str = "not set";
+		break;
+	case RET_ERROR:
+		err_str = "operation finished with general error";
+		break;
+	case RET_ERROR_POINTER:
+		err_str = "operation finished with illegal pointer";
+		break;
+	case RET_INCORRECT_SIZE:
+		err_str = "the tunerequest structure did not have the expected size";
+		break;
+	case RET_TUNER_IF_UNAVAILABLE:
+		err_str = "the tuner interface was not available";
+		break;
+	case RET_UNKNOWN_DVB_TYPE:
+		err_str = "an unknown DVB type has been specified for the tune request";
+		break;
+	case RET_BUFFER_TOO_SMALL:
+		err_str = "length of buffer is too small";
+		break;
+	default:
+		err_str = "unknown error";
+	}
+	return err_str;
+}
+
+HRESULT CBdaGraph::DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE tb)
+{
+	if (INVALID_HANDLE_VALUE==hTT)
+		return E_FAIL;
+
+	TYPE_RET_VAL rc;
 	char text[256];
+	rc = bdaapiSetDiSEqCMsg(hTT,DiSEqC_Command,len,0,tb,BDA_POLARISATION_LINEAR_H);
+	if (rc)
+	{
+		sprintf(text,"BDA2: DVBS_Technotrend_DiSEqC: failed - %s", ErrorMessageTTBDA(rc));
+		return E_FAIL;
+	}
+	sprintf(text,"BDA2: DVBS_Technotrend_DiSEqC: success");
+	ReportMessage(text);
+	return S_OK;
+}
 
-	for(i=0;i<len;++i)
-		buf[i] = DiSEqC_Command[i];
-	for(;i<188;++i)
-		buf[i] = 0x0;
-	*((int *)(buf+160)) = len; //send_message_length
-	*((int *)(buf+164)) = 0; //receive_message_length
-	*((int *)(buf+168)) = 3; //amplitude_attenuation
-	buf[172] = (BYTE)1; //tone_burst_modulated
-	buf[176] = (BYTE)(HauppaugeDiSEqCVersion(DISEQC_VER_1X));
-	buf[180] = (BYTE)(HauppaugeRxMode(RXMODE_NOREPLY));
-	buf[184] = (BYTE)1; // last_message
+HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>6))
+		return E_INVALIDARG;
 
-	hr = m_pProprietaryInterface->Set(CLSID_HauppaugeBdaTunerExtension,
-		HauppaugeBdaTunerExtension(Hauppauge_KSPROPERTY_BDA_DISEQC),
-		&buf, sizeof(buf), &buf, sizeof(buf));
+	if (iTVIdx<0)
+		return E_FAIL;
+
+	if (SendDiSEqC(iTVIdx, DiSEqC_Command, len, 0, FALSE))
+	{
+		ReportMessage("BDA2: DVBS_TeVii_DiSEqC: success");
+		return S_OK;
+	}
+	else
+	{
+		ReportMessage("BDA2: DVBS_TeVii_DiSEqC: failed");
+		return E_FAIL;
+	}
+}
+
+HRESULT CBdaGraph::DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>12))
+		return E_INVALIDARG;
+
+	DiSEqC_DATA diseqc_cmd;
+	diseqc_cmd.command_len = len;
+	memcpy(diseqc_cmd.command, DiSEqC_Command, len);
+	if (THBDA_IOCTL_SET_DiSEqC_Fun(&diseqc_cmd))
+	{
+		ReportMessage("BDA2: DVBS_Twinhan_DiSEqC: success");
+		return S_OK;
+	}
+	ReportMessage("BDA2: DVBS_Twinhan_DiSEqC: failed");
+	return E_FAIL;
+}
+
+HRESULT CBdaGraph::DVBS_Twinhan_LNBPower(BOOL bPower)
+{
+	LNB_DATA lnb_data;
+	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
+	{
+		lnb_data.LNB_POWER = bPower ? LNB_POWER_ON : LNB_POWER_OFF;
+		if (THBDA_IOCTL_SET_LNB_DATA_Fun(&lnb_data))
+		{
+			ReportMessage("BDA2: DVBS_Twinhan_LNBPower: success");
+			return S_OK;
+		}
+	}
+	ReportMessage("BDA2: DVBS_Twinhan_LNBPower: failed");
+	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_Twinhan_LNBSource (BYTE Port, BYTE ToneBurst)
+{
+	LNB_DATA lnb_data;
+	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
+	{
+		lnb_data.DiSEqC_Port = Port;
+		lnb_data.Tone_Data_Burst = ToneBurst;
+		if (THBDA_IOCTL_SET_LNB_DATA_Fun(&lnb_data))
+		{
+			ReportMessage("BDA2: DVBS_Twinhan_LNBSource: success");
+			return S_OK;
+		}
+	}
+	ReportMessage("BDA2: DVBS_Twinhan_LNBSource: failed");
+	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_DvbWorld_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>6))
+		return E_INVALIDARG;
+
+	if (INVALID_HANDLE_VALUE==hDW)
+		return E_FAIL;
+
+	char text[256];
+	HRESULT hr = dwBDADiseqSendCommand(hDW,DiSEqC_Command,len);
 	if(FAILED(hr))
 	{
-		sprintf(text,"BDA2: DVBS_Hauppauge_DiSEqC: failed sending DISEQC_MESSAGE_PARAMS (0x%8.8x)", hr);
+		sprintf(text,"BDA2: DVBS_DvbWorld_DiSEqC: failed sending DiSEqC command(0x%8.8x)", hr);
 		ReportMessage(text);
 		return E_FAIL;
 	}
-	sprintf(text,"BDA2: DVBS_Hauppauge_DiSEqC: sent DISEQC_MESSAGE_PARAMS");
+	sprintf(text,"BDA2: DVBS_DvbWorld_DiSEqC: sent DiSEqC command");
 	ReportMessage(text);
-
 	return S_OK;
 }

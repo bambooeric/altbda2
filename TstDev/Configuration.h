@@ -12,13 +12,10 @@
 #include <stdio.h>
 #include <WinVer.h>
 
-#include "TT_BDA.h" // Technotrend
-#include "Hauppauge.h"
-
 #define DEFAULT_MOD_8PSK BDA_MOD_8VSB
 #define DEFAULT_DISEQC DISEQC_COMMITED
 
-enum VENDOR_SPECIFIC { PURE_BDA = 0x0, TT_BDA, HAUP_BDA };
+enum VENDOR_SPECIFIC { PURE_BDA, WIN7_BDA, TT_BDA, HAUP_BDA, CXT_BDA, TBS_BDA, TH_BDA, DW_BDA, TV_BDA, OMC_BDA };
 enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1, ROLLOFF_NOT_DEFINED = 0x0,
 	ROLLOFF_20 = 0x1, ROLLOFF_25, ROLLOFF_35 };
 enum S2_PILOT { PILOT_NOT_SET = -1, PILOT_NOT_DEFINED = 0x0,
@@ -30,11 +27,6 @@ struct CONF_PARAMS
 	int ConfDiSEqC; 
 	ModulationType ConfMod8PSK;
 	int VendorSpecific;
-	// TT - TechnoTrend
-	char device_path[256];
-	HANDLE ttHandle;
-	// Hauppauge
-	int RollOff;
 	int S2RollOff;
 	int S2Pilot;
 };
@@ -46,9 +38,6 @@ public:
 	~CConfiguration();
 
 	void Configure(HINSTANCE, int, char *);
-	void VendorSpecificClose(void);
-	int VendorSpecificDiSEqC(BYTE, BYTE *);
-
 	BOOLEAN ReadConfigurationFile();
 	BOOLEAN CreateConfigurationFile();
 
@@ -60,7 +49,6 @@ public:
 
 private:
 //	CConfDialog *pConfDialog;
-	void CheckVendorSpecific(int, char *);
 };
 
 #endif /* CONFIGURATION_H */

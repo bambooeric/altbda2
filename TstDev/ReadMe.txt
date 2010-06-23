@@ -1,17 +1,28 @@
 This is a new BDA interface wrapper for AltDVB v2.2.
 
+!!! ttBdaDrvApi_Dll.dll, TeVii.dll must be placed in directory with AltDVB.exe !!!
+
 The configuration file (Dev_Bda2Driver.cfg) should be placed in the same folder
 as the interface (Dev_Bda2Driver.int). If this file doesn't exist, the interface driver
 will create a new one with default values.
 
-DVB-S2 signalling:
-TechnoTrend users - no change neccessary (DVBS2Signalling signalling value is the default 8VSB)
-KNC One users     - change the DVBS2Signalling signalling value to: 8PSK
-Hauppauge users   - change the DVBS2Signalling signalling value to: NBC_8PSK
-all other         - try 8VSB or 8PSK
-
-S/S2 Pilot and S2 Roll Off:
+S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
+
+v 0.2.0.1 - 2010.06.24
+- Removed DVBS2Signalling, DiSEqC, S_ROLLOFF settings from config.
+- Added FEC support.
+- LNB power-off support.
+- Vendor-specific BDA extension autodetection. Now supported:
+	* Technotrend BDA API (use ttBdaDrvApi_Dll.dll). ToneBurst + Raw DiSEqC, LNB power-off, Modulation type selection.
+	* Hauppauge BDA extension. Raw DiSEqC, Modulation type selection, S2 Pilot/RollOff settings.
+	* Conexant BDA extension. Raw DiSEqC, Modulation type selection, S2 Pilot/RollOff settings (optional), LNB power-off (optional).
+	* DvbWorld BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection.		
+	* Turbosight BDA extension. Raw DiSEqC, Modulation type selection, LNB power-off.
+	* Twinhan BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection, LNB power-off.
+	* TeVii BDA API (TeVii.dll). Raw DiSEqC, LNB power-off, Modulation type selection.	
+	* Omicom BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection.
+----------	
 
 v 0.1.0.12 - 2010.06.17
 - recompiled with latest Technotrend BDA SDK (1.0.1.21). Now use ttBdaDrvApi_Dll.dll

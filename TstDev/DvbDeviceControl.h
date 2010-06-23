@@ -1,4 +1,3 @@
-
 #include "BdaGraph.h"
 
 class CDvbDeviceControl: public CConfiguration

@@ -46,13 +46,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include"
+				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				ObjectFile="$(IntDir)"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 				CallingConvention="0"
@@ -69,10 +68,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmiids.lib  strmbasd.lib winmm.lib version.lib ttBdaDrvApi_Dll.lib"
+				AdditionalDependencies="strmiids.lib  strmbasd.lib ksproxy.lib winmm.lib version.lib ttBdaDrvApi_Dll.lib TeVii.lib"
 				OutputFile="$(OutDir)\Dev_Bda2Driver.int"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Debug;H:\src\TechnoTrend\BDA-SDK\Lib"
+				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Debug;H:\src\TechnoTrend\BDA-SDK\Lib;H:\src\TeVii"
 				ModuleDefinitionFile="Dll.def"
 				GenerateDebugInformation="true"
 				GenerateMapFile="false"
@@ -133,7 +132,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include"
+				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -153,10 +152,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmiids.lib strmbase.lib winmm.lib version.lib ttBdaDrvApi_Dll.lib"
+				AdditionalDependencies="strmiids.lib strmbase.lib ksproxy.lib winmm.lib version.lib ttBdaDrvApi_Dll.lib TeVii.lib"
 				OutputFile="$(OutDir)\Dev_Bda2Driver.int"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Release;H:\src\TechnoTrend\BDA-SDK\Lib"
+				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Release;H:\src\TechnoTrend\BDA-SDK\Lib;H:\src\TeVii"
 				ModuleDefinitionFile="Dll.def"
 				GenerateDebugInformation="false"
 				GenerateMapFile="false"
@@ -202,67 +201,26 @@
 			<File
 				RelativePath=".\BdaGraph.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\CallbackFilter.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\ConfDialog.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\Configuration.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\cxtbda.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\Dll.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\Dll.def"
@@ -271,61 +229,30 @@
 			<File
 				RelativePath=".\DvbDeviceControl.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\dwBdaApi.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\NetworkProvider.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\omcbda.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\stdafx.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\TT_BDA.cpp"
+				RelativePath=".\tbsbda.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\THIOCtrl.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
@@ -350,6 +277,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cxtbda.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Dll.h"
 				>
 			</File>
@@ -358,11 +289,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Hauppauge.h"
+				RelativePath=".\dwBdaApi.h"
 				>
 			</File>
 			<File
 				RelativePath=".\NetworkProvider.h"
+				>
+			</File>
+			<File
+				RelativePath=".\omcbda.h"
 				>
 			</File>
 			<File
@@ -374,7 +309,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\TT_BDA.h"
+				RelativePath=".\tbsbda.h"
+				>
+			</File>
+			<File
+				RelativePath=".\THIOCtrl.h"
 				>
 			</File>
 		</Filter>
@@ -388,10 +327,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\Dev_Bda2Driver.cfg"
-			>
-		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

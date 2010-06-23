@@ -50,22 +50,23 @@ HRESULT CDVBNetworkProviderPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATO
 
 HRESULT CDVBNetworkProviderPin::CompleteConnect(IPin *pReceivePin)
 {
-	HRESULT hr;
 
 	CheckPointer(pReceivePin,E_POINTER);
 	
-/*	hr = pFilter->CreateOutputPin(pReceivePin);
+/*
+	HRESULT hr;
+	hr = pFilter->CreateOutputPin(pReceivePin);
 	if(FAILED(hr))
 	{
 		DebugLog("BDA2: CDVBNetworkProviderPin.CompleteConnect.CreateOutputPin: failed");
 		return hr;
-	}*/
+	}
+*/
 	return CBaseOutputPin::CompleteConnect(pReceivePin);
 }
 
 HRESULT CDVBNetworkProviderPin::Run(REFERENCE_TIME tStart)
 {
-	HRESULT hr;
 	IPin *pin;
 
 	pin = GetConnected();
@@ -75,12 +76,15 @@ HRESULT CDVBNetworkProviderPin::Run(REFERENCE_TIME tStart)
 		return E_FAIL;
 	}
 
-//	hr = pFilter->CreateOutputPin(pin);
-//	if(FAILED(hr))
-//	{
-//		DebugLog("BDA2: CDVBNetworkProviderPin.Run: CreateOutputPin Failed");
-//		return hr;
-//	}
+	/*
+	HRESULT hr;
+	hr = pFilter->CreateOutputPin(pin);
+	if(FAILED(hr))
+	{
+		DebugLog("BDA2: CDVBNetworkProviderPin.Run: CreateOutputPin Failed");
+		return hr;
+	}
+	*/
 	return CBaseOutputPin::Run(tStart);
 }
 
@@ -587,7 +591,8 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 		ModulationType ModType,
 		LONG SymRate,
 		LONG PosOpt,
-		Polarisation Pol)
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec)
 {
 	HRESULT hr;
 	IBaseFilter *filt;
@@ -639,27 +644,14 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 		hr = pLNB->put_HighLowSwitchFrequency(SwitchF);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_HighLowSwitchFrequency");
-		if(PosOpt == 0xffffffff || previous_PosOpt == PosOpt)
-		{
-			hr = pFreqFilter->put_Range(-1);
-			if(FAILED(hr))
-				DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
-else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range DVB-S2 0xffffffff");
-
-		}
+		pFreqFilter->put_Range(PosOpt);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
 		else
-		{
-			pFreqFilter->put_Range(PosOpt);
-			if(FAILED(hr))
-				DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
-else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range DVB-S2 0x%4.4x",PosOpt);
-		}
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",PosOpt);
 		hr = pFreqFilter->put_Polarity(Pol);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Polarity");
-//		hr = pFreqFilter->put_Bandwidth(-1);
-//		if(FAILED(hr))
-//			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Bandwidth");
 		hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_FrequencyMultiplier");
@@ -689,28 +681,16 @@ else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range DVB-S2 0x
 		hr = pLNB->put_HighLowSwitchFrequency(SwitchF);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_HighLowSwitchFrequency");
-		if(PosOpt == 0xffffffff)
-		{
-			hr = pFreqFilter->put_Range(previous_PosOpt);
-			if(FAILED(hr))
-				DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
-else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",previous_PosOpt);
-		}
+		hr = pFreqFilter->put_Range(PosOpt);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
 		else
-		{
-			hr = pFreqFilter->put_Range(PosOpt);
-			if(FAILED(hr))
-				DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
-else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",PosOpt);
-		}
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",PosOpt);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
 		hr = pFreqFilter->put_Polarity(Pol);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Polarity");
-//		hr = pFreqFilter->put_Bandwidth(-1);
-//		if(FAILED(hr))
-//			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Bandwidth");
 		hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_FrequencyMultiplier");
@@ -724,12 +704,17 @@ else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_ModulationType");
 		hr = pDemodFilter->put_SymbolRate((ULONG *)&SymRate);
+		FECMethod FecMethod=BDA_FEC_VITERBI;
+		hr = pDemodFilter->put_InnerFECMethod(&FecMethod);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate");
+		hr = pDemodFilter->put_InnerFECRate(&Fec);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate");
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_SymbolRate");
 		hr = CommitChanges(RegisteredDevices[device_index].Control);
 	}
-	if(PosOpt != 0xffffffff)
-		previous_PosOpt = PosOpt;
 	return hr;
 }
 
@@ -741,7 +726,8 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning_DiSEqC(
 		SpectralInversion SpectrInv,
 		ModulationType ModType,
 		LONG SymRate,
-		Polarisation Pol)
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec)
 {
 	HRESULT hr;
 	IBaseFilter *filt;
@@ -792,20 +778,14 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning_DiSEqC(
 		hr = pLNB->put_HighLowSwitchFrequency(SwitchF);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_HighLowSwitchFrequency");
-		{
-			hr = pFreqFilter->put_Range(-1L);
-			if(FAILED(hr))
-				DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_Range");
-//else DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: put_Range 0x%4.4x",PosOpt);
-		}
+		hr = pFreqFilter->put_Range(-1L);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_Range");
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_Range");
 		hr = pFreqFilter->put_Polarity(Pol);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_Polarity");
-//		hr = pFreqFilter->put_Bandwidth(-1);
-//		if(FAILED(hr))
-//			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_Bandwidth");
 		hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_FrequencyMultiplier");
@@ -821,6 +801,13 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning_DiSEqC(
 		hr = pDemodFilter->put_SymbolRate((ULONG *)&SymRate);
 		if(FAILED(hr))
 			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_SymbolRate");
+		FECMethod FecMethod=BDA_FEC_VITERBI;
+		hr = pDemodFilter->put_InnerFECMethod(&FecMethod);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_InnerFECRate");
+		hr = pDemodFilter->put_InnerFECRate(&Fec);
+		if(FAILED(hr))
+			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning_DiSEqC: failed put_InnerFECRate");
 		hr = CommitChanges(RegisteredDevices[device_index].Control);
 	}
 	return hr;

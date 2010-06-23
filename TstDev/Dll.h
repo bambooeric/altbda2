@@ -42,14 +42,14 @@ struct DRIVER_DATA // length 0x184 == 388B
 };
 
 /* ain't using bitfields, they are too compiler dependant */
-typedef enum DEVICE_TYPE { DVBS=0x1, DVBC=0x2, DVBT=0x3, ATSC=0x4, ERR=0x9, AVAILABLE=0x00010000};
+enum DEVICE_TYPE { DVBS=0x1, DVBC=0x2, DVBT=0x3, ATSC=0x4, ERR=0x9, AVAILABLE=0x00010000};
 
 struct DEVICE_DATA // length 0x824 == 2084B
 {
 	int dev_cnt; // up to 8 devices
 	struct
 	{
-		enum DEVICE_TYPE dev_type;
+		DWORD dev_type;
 		char dev_name[128];
 		char dev_id[128];
 	} device[8];
@@ -89,9 +89,9 @@ enum MODULATION { MOD_AUTO=0x0, MOD_QPSK=0x1, MOD_8PSK=0x2,
 	MOD_VSB_8=0x8, MOD_VSB_16=0x9};
 enum BANDWIDTH { BANDW_AUTO = 0x0, BANDW_6=0x6, BANDW_7=0x7, BANDW_8=0x8 };
 enum FEC { FEC_AUTO=0x0, FEC_1_2=0x1, FEC_2_3=0x2, FEC_3_4=0x3, FEC_4_5=0x4,
-	FEC_5_6=0x6, FEC_6_7=0x6, FEC_7_8=0x7, FEC_8_9=0x8, FEC_9_10=0x9 };
+	FEC_5_6=0x5, FEC_6_7=0x6, FEC_7_8=0x7, FEC_8_9=0x8, FEC_9_10=0x9 };
 enum POLARITY { POL_NONE=0x0, LINEAR_VERTICAL=0x0D, LINEAR_HORIZONTAL=0x12,
-	LNB_POWER_OFF=0x80, LNB_POWER_ON=0x81 }; // and Circular????
+	LNBPOWER_OFF=0x80, LNBPOWER_ON=0x81 }; // and Circular????
 enum SWITCHES { SW_NONE=0x0, TONEBURST_A=0x1, TONEBURST_B=0x2,
 	POS_A_OPT_A=0x3, POS_B_OPT_A=0x4, POS_A_OPT_B=0x5, POS_B_OPT_B=0x6 };
 
