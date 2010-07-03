@@ -2,6 +2,8 @@
 
 #include "DvbDeviceControl.h"
 
+#define TEVII_FULL
+
 CDvbDeviceControl::CDvbDeviceControl(HMODULE hModule)
 {
 	hInstance = hModule;
@@ -20,9 +22,9 @@ CDvbDeviceControl::~CDvbDeviceControl()
 
 int CDvbDeviceControl::DriverDescription(struct DRIVER_DATA *d)
 {
-	sprintf(d->author,"Diodato");
+	sprintf(d->author,"Diodato & CrazyCat");
 	sprintf(d->description,"BDA DVB-S/T/C Interface");
-	sprintf(d->url,"");
+	sprintf(d->url,"http://code.google.com/p/altbda2");
 
 	return AltxDVB_OK;
 }
@@ -97,8 +99,14 @@ int CDvbDeviceControl::DeviceName(struct DEVICE_NAME_DATA *d)
 
 	if(selected_device_enum == 0x0)
 		return AltxDVB_ERR;
+
 	WideCharToMultiByte(CP_ACP, 0, BdaGraph.friendly_name_tuner, -1, txt, sizeof(txt), NULL, NULL);
+
+	if (conf_params.VendorSpecific==TT_BDA)
+		BdaGraph.DVBS_Technotrend_GetProdName(txt,sizeof(txt));
+
 	sprintf(d->description,"BDA2 [%s]",txt);
+
 	return AltxDVB_OK;
 }
 
@@ -143,6 +151,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				if FAILED(BdaGraph.DVBS_Twinhan_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
 				break;
+#ifdef TEVII_FULL
 			case TV_BDA:
 				if(FAILED(BdaGraph.DVBS_TeVii_Tune(
 					(ULONG)(DEFAULT_LOW_OSCILLATOR),
@@ -156,6 +165,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					DEFAULT_FEC)))
 					return AltxDVB_ERR;
 				break;
+#endif
 			default:
 				if(FAILED(BdaGraph.DVBS_Tune(
 					(ULONG)(DEFAULT_LOW_OSCILLATOR),
@@ -304,6 +314,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				PosOpt)))
 				return AltxDVB_ERR;
 			break;
+#ifdef TEVII_FULL
 		case TV_BDA:
 			if(FAILED(BdaGraph.DVBS_TeVii_Tune(
 				(ULONG)(d->lnb_low),
@@ -317,6 +328,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				Fec)))
 				return AltxDVB_ERR;
 			break;
+#endif
 		case DW_BDA:
 			if(FAILED(BdaGraph.DVBS_DvbWorld_Tune(
 				(ULONG)(d->lnb_low),
@@ -386,9 +398,11 @@ int CDvbDeviceControl::SignalStatistics(struct SIGNAL_STATISTICS_DATA *d)
 
 	switch(conf_params.VendorSpecific)
 	{
+#ifdef TEVII_FULL
 	case TV_BDA:
 		hr = BdaGraph.GetTeViiSignalStatistics(&present,&locked,&strength,&quality);
 		break;
+#endif
 	default:
 		hr = BdaGraph.GetSignalStatistics(&present,&locked,&strength,&quality);
 	}

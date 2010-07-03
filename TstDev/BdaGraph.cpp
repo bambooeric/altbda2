@@ -86,11 +86,66 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 							Tuners->Tuner[Tuners->Count].Id = dev_enum_i;
 							Tuners->Tuner[Tuners->Count].Type = type;
 							Tuners->Tuner[Tuners->Count].Availability = TRUE; // TODO - check availability
-							Tuners->Count += 1;
 						}
 						else
 							DebugLog("BDA2: DeviceDescription: Failed getting network tuner type");
+
+						char* tuner_name = Tuners->Tuner[Tuners->Count].Name;
+						if ( strstr(tuner_name, "DVBLink Tuner" ) )
+						{
+							//Tuners->Tuner[Tuners->Count].Type = CLSID_NetworkProvider;
+							Tuners->Tuner[Tuners->Count].Availability = FALSE;
+						}
+						
+						// Technotrend check
+						DEVICE_CAT TTDevCat=UNKNOWN;
+						if ( strstr(tuner_name, BDG2_NAME_S_TUNER) ||
+							strstr(tuner_name, BDG2_NAME_C_TUNER) ||
+							strstr(tuner_name, BDG2_NAME_T_TUNER) ||
+							strstr(tuner_name, BDG2_NAME_S_TUNER_FAKE) ||
+							strstr(tuner_name, BDG2_NAME_C_TUNER_NEW) ||
+							strstr(tuner_name, BDG2_NAME_S_TUNER_NEW) ||
+							strstr(tuner_name, BDG2_NAME_T_TUNER_NEW) )
+							TTDevCat=BUDGET_2;
+						if ( strstr(tuner_name, BUDGET3NAME_TUNER) ||
+							strstr(tuner_name,  BUDGET3NAME_ATSC_TUNER) )
+							TTDevCat=BUDGET_3;
+						if ( strstr(tuner_name, USB2BDA_DVB_NAME_S_TUNER) ||
+							strstr(tuner_name, USB2BDA_DVB_NAME_C_TUNER) ||
+							strstr(tuner_name, USB2BDA_DVB_NAME_T_TUNER) ||
+							strstr(tuner_name, USB2BDA_DVB_NAME_S_TUNER_FAKE) )
+							TTDevCat=USB_2;
+						if ( strstr(tuner_name, USB2BDA_DVBS_NAME_PIN) )
+							TTDevCat=USB_2_PINNACLE;
+						if ( strstr(tuner_name, USB2BDA_DSS_NAME_TUNER) )
+							TTDevCat=USB_2_DSS;
+						if ( strstr(tuner_name, PREMIUM_NAME_DIGITAL_TUNER) )
+							TTDevCat=PREMIUM;
+
+						IPin* pPin = GetOutPin(pFilter, 0);
+						if ( pPin && (TTDevCat!=UNKNOWN) )
+						{
+							DebugLog("BDA2: DeviceDescription: Check Technotrend device info");
+							REGPINMEDIUM Medium;
+							memset(&Medium, 0, sizeof(Medium));
+							if (GetPinMedium(pPin, &Medium) == S_OK)
+							{
+								hTT = bdaapiOpenHWIdx(TTDevCat,Medium.dw1);
+								if (INVALID_HANDLE_VALUE!=hTT)
+								{
+									if (!DVBS_Technotrend_GetProdName(tuner_name,sizeof(Tuners->Tuner[Tuners->Count].Name)))
+										DebugLog("BDA2: DeviceDescription: Can't get Technotrend product name");
+									bdaapiClose (hTT);
+									hTT = INVALID_HANDLE_VALUE;
+								}
+								else
+									DebugLog("BDA2: DeviceDescription: Can't open Technotrend device via TT BDA API");
+							}
+							else
+								DebugLog("BDA2: DeviceDescription: Can't get Tuner pin medium");
+						}
 						pFilter->Release();
+						Tuners->Count += 1;
 					}
 					else
 						DebugLog("BDA2: DeviceDescription: Failed binding moniker to object");
@@ -110,6 +165,18 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 	else
 		DebugLog("BDA2: DeviceDescription: Failed creating KSCATEGORY_BDA_NETWORK_TUNER class enumerator");
 	return hr;
+}
+
+BOOL CBdaGraph::DVBS_Technotrend_GetProdName( char* pszProdName, size_t len )
+{
+	if (INVALID_HANDLE_VALUE==hTT)
+		return FALSE;
+	TS_FilterNames TTInfo;
+	TYPE_RET_VAL rc = bdaapiGetDevNameAndFEType (hTT, &TTInfo);
+	if (RET_SUCCESS != rc)
+		return FALSE;
+	strncpy(pszProdName, TTInfo.szProductName, len);
+	return TRUE;
 }
 
 HRESULT CBdaGraph::GetTunerPath(int idx, char* pTunerPath)
@@ -555,6 +622,27 @@ ReportMessage(text);
 		}
 	}
 
+	m_pTunerControl = NULL;
+	hr = m_pTunerDevice->QueryInterface(IID_IKsControl,(void**)&m_pTunerControl);
+	if (hr==S_OK)
+	{
+		KSPROPERTY prop;
+		ULONG bytesReturned = 0;
+		DWORD supported = 0;
+		Z(prop);
+
+		prop.Set = KSPROPSETID_OMCDiSEqCProperties;
+		prop.Id = KSPROPERTY_OMC_DISEQC_WRITE;
+		prop.Flags = KSPROPERTY_TYPE_BASICSUPPORT;
+		hr = m_pTunerControl->KsProperty(&prop,sizeof(prop),
+			(void*)&supported, sizeof(supported),&bytesReturned);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
+		}
+	}
+
 	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pProprietaryInterface);
 	if (hr==S_OK)
@@ -594,43 +682,25 @@ ReportMessage(text);
 		}
 	}
 
-	m_pTunerControl = NULL;
-	hr = m_pTunerDevice->QueryInterface(IID_IKsControl,(void**)&m_pTunerControl);
-	if (hr==S_OK)
+	if (*VendorSpecific == PURE_BDA)
 	{
-		KSPROPERTY prop;
-		ULONG bytesReturned = 0;
-		DWORD supported = 0;
-		Z(prop);
-
-		prop.Set = KSPROPSETID_OMCDiSEqCProperties;
-		prop.Id = KSPROPERTY_OMC_DISEQC_WRITE;
-		prop.Flags = KSPROPERTY_TYPE_BASICSUPPORT;
-		hr = m_pTunerControl->KsProperty(&prop,sizeof(prop),
-			(void*)&supported, sizeof(supported),&bytesReturned);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
-		{
-			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
-		}
-	}
-
-	char receiver_path[MAX_PATH];
-	hr = GetTunerPath(selected_device_enum, receiver_path);
-	int m = FindDevices();
-	for (int i=0; i<m; i++)
-		if ( (!strcmp(receiver_name,GetDeviceName(i))) && (!strcmp(receiver_path,GetDevicePath(i))) )
-		{
-			if (OpenDevice(i,NULL,NULL))
+		char receiver_path[MAX_PATH];
+		hr = GetTunerPath(selected_device_enum, receiver_path);
+		int m = FindDevices();
+		for (int i=0; i<m; i++)
+			if ( (!strcmp(receiver_name,GetDeviceName(i))) && (!strcmp(receiver_path,GetDevicePath(i))) )
 			{
-				DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
-				*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
-				iTVIdx=i;
+				if (OpenDevice(i,NULL,NULL))
+				{
+					DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
+					*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
+					iTVIdx=i;
+				}
+				else
+					DebugLog("BDA2: BuildGraph: Can't open TeVii device interface");
+				break;
 			}
-			else
-				DebugLog("BDA2: BuildGraph: Can't open TeVii device interface");
-			break;
-		}
+	}
 
 	hr = S_OK;
 	pCallbackInstance = new CCallbackFilter(NULL, &hr);

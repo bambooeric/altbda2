@@ -9,6 +9,11 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.2 - 2010.07.04
+- Change BDA type detection order. Use Turbosight, DVBWorld extension for TeVii devices with old drivers (pre 2009).
+- Show Technotrend product name instead tuner filter name.
+- Change credits and added project url in device selection dialog.
+
 v 0.2.0.1 - 2010.06.24
 - Removed DVBS2Signalling, DiSEqC, S_ROLLOFF settings from config.
 - Added FEC support.
