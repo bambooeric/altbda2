@@ -703,6 +703,45 @@ ReportMessage(text);
 	}
 
 	hr = S_OK;
+#ifdef SG_USE
+	pCallbackInstance = new CSampleGrabberCB();
+	if (!pCallbackInstance)
+	{
+		sprintf(text,"BDA2: BuildGraph: Failed instantiating SampleGrabber Callback");
+		ReportMessage(text);
+		return hr;
+	}
+    hr = CoCreateInstance(
+                        CLSID_SampleGrabber,
+                        NULL, 
+                        CLSCTX_INPROC_SERVER,
+                        IID_IBaseFilter, 
+                        reinterpret_cast<void**>(&m_pCallbackFilter)
+                        );
+	if (FAILED(hr))
+	{
+		sprintf(text,"BDA2: BuildGraph: Failed creating SampleGrabber Filter");
+		ReportMessage(text);
+		return hr;
+	}
+
+	CComPtr <ISampleGrabber> sg;
+	hr = m_pCallbackFilter->QueryInterface(IID_ISampleGrabber, (void**)&sg);
+	if FAILED(hr)
+	{
+		sprintf(text,"BDA2: BuildGraph: Failed QI SampleGrabber Filter");
+		ReportMessage(text);
+		return hr;
+	}
+	AM_MEDIA_TYPE mt;
+	memset(&mt,0,sizeof(mt));
+	mt.majortype = MEDIATYPE_Stream;
+	mt.subtype == KSDATAFORMAT_SUBTYPE_BDA_MPEG2_TRANSPORT;
+	hr = sg->SetMediaType(&mt);
+	hr = sg->SetOneShot(FALSE);
+	hr = sg->SetBufferSamples(FALSE);
+	hr = sg->SetCallback(pCallbackInstance, 0);
+#else
 	pCallbackInstance = new CCallbackFilter(NULL, &hr);
 	if (pCallbackInstance == NULL || FAILED(hr))
 	{
@@ -718,6 +757,8 @@ ReportMessage(text);
 		ReportMessage(text);
 		return hr;
 	}
+#endif //SG_USE
+
 	hr = m_pFilterGraph->AddFilter(m_pCallbackFilter, L"Callback");
 	if (FAILED(hr))
 	{
@@ -725,8 +766,10 @@ ReportMessage(text);
 		ReportMessage(text);
 		return hr;
 	}
-sprintf(text,"BDA2: BuildGraph: Trying to connect Tuner filter directly to Callback");
-ReportMessage(text);
+
+	sprintf(text,"BDA2: BuildGraph: Trying to connect Tuner filter directly to Callback");
+	ReportMessage(text);
+
 	// try connecting Callback directly with Tuner
 	m_pP1 = GetOutPin(m_pTunerDevice, 0);
 	if(m_pP1 == 0)
@@ -1001,9 +1044,9 @@ HRESULT CBdaGraph::DVBS_Tune(
 			SpectralInversion SpectrInv,
 			ModulationType ModType,
 			LONG SymRate,
-			LONG PosOpt,
-		Polarisation Pol,
-		BinaryConvolutionCodeRate Fec)
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec,
+			LONG PosOpt)
 {
 	if(pNetworkProviderInstance)
 		return pNetworkProviderInstance->DoDVBSTuning(
@@ -1014,9 +1057,9 @@ HRESULT CBdaGraph::DVBS_Tune(
 			SpectrInv,
 			ModType,
 			SymRate,
-			PosOpt,
 			Pol,
-			Fec);
+			Fec,
+			PosOpt);
 	else
 		return E_FAIL;
 }
@@ -1031,33 +1074,20 @@ HRESULT CBdaGraph::DVBS_TT_Tune(
 			LONG SymRate,
 			Polarisation Pol,
 			BinaryConvolutionCodeRate Fec,
-			BOOLEAN RawDiSEqC,
 			LONG PosOpt)
 {
 	if(pNetworkProviderInstance)
-		if(RawDiSEqC)
-			return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				Pol,
-				Fec);
-		else
-			return pNetworkProviderInstance->DoDVBSTuning(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				PosOpt,
-				Pol,
-				Fec);
+		return pNetworkProviderInstance->DoDVBSTuning(
+			LowBandF,
+			HighBandF,
+			SwitchF,
+			Frequency,
+			SpectrInv,
+			ModType,
+			SymRate,
+			Pol,
+			Fec,
+			PosOpt);
 	return E_FAIL;
 }
 
@@ -1196,7 +1226,6 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			BinaryConvolutionCodeRate Fec,
 			DWORD S2RollOff,
 			DWORD S2Pilot,
-			BOOLEAN RawDiSEqC,
 			LONG PosOpt)
 {
 	DWORD ret_len;
@@ -1265,29 +1294,17 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 		}
 	}
 	if(pNetworkProviderInstance)
-		if(RawDiSEqC)
-			return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				Pol,
-				Fec);
-		else
-			return pNetworkProviderInstance->DoDVBSTuning(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				PosOpt,
-				Pol,
-				Fec);
+		return pNetworkProviderInstance->DoDVBSTuning(
+			LowBandF,
+			HighBandF,
+			SwitchF,
+			Frequency,
+			SpectrInv,
+			ModType,
+			SymRate,
+			Pol,
+			Fec,
+			PosOpt);
 	return E_FAIL;
 }
 
@@ -1303,7 +1320,6 @@ HRESULT CBdaGraph::DVBS_Conexant_Tune(
 			BinaryConvolutionCodeRate Fec,
 			DWORD S2RollOff,
 			DWORD S2Pilot,
-			BOOLEAN RawDiSEqC,
 			LONG PosOpt)
 {
 	char text[256];
@@ -1358,29 +1374,17 @@ HRESULT CBdaGraph::DVBS_Conexant_Tune(
 		}
 	}
 	if(pNetworkProviderInstance)
-		if(RawDiSEqC)
-			return pNetworkProviderInstance->DoDVBSTuning_DiSEqC(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				Pol,
-				Fec);
-		else
-			return pNetworkProviderInstance->DoDVBSTuning(
-				LowBandF,
-				HighBandF,
-				SwitchF,
-				Frequency,
-				SpectrInv,
-				ModType,
-				SymRate,
-				PosOpt,
-				Pol,
-				Fec);
+		return pNetworkProviderInstance->DoDVBSTuning(
+			LowBandF,
+			HighBandF,
+			SwitchF,
+			Frequency,
+			SpectrInv,
+			ModType,
+			SymRate,
+			Pol,
+			Fec,
+			PosOpt);
 	return E_FAIL;
 }
 
@@ -1411,6 +1415,23 @@ HRESULT CBdaGraph::GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG
 		return pNetworkProviderInstance->GetSignalStatistics(pPresent, pLocked, pStrength, pQuality);
 	else
 		return E_FAIL;
+}
+
+HRESULT CBdaGraph::GetTechnotrendSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality)
+{
+	if (INVALID_HANDLE_VALUE==hTT)
+		return E_FAIL;
+
+	TYPE_RET_VAL rc;
+	DWORD stat[4];
+	rc = bdaapiGetTuneStats (hTT,stat,sizeof(stat));
+	if (rc)
+		return E_FAIL;
+	*pLocked=stat[2];
+	*pStrength=stat[1];
+	*pQuality=stat[3];
+	*pPresent=stat[0];
+	return S_OK;
 }
 
 HRESULT CBdaGraph::GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality)

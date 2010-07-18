@@ -9,12 +9,17 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
-v 0.2.0.2 - 2010.07.04
+v 0.2.0.3 - 2010.07.18 - CrazyCat
+- DVB-S tuning code cleanup.
+----------
+
+v 0.2.0.2 - 2010.07.04 - CrazyCat
 - Change BDA type detection order. Use Turbosight, DVBWorld extension for TeVii devices with old drivers (pre 2009).
 - Show Technotrend product name instead tuner filter name.
 - Change credits and added project url in device selection dialog.
+----------
 
-v 0.2.0.1 - 2010.06.24
+v 0.2.0.1 - 2010.06.24 - CrazyCat
 - Removed DVBS2Signalling, DiSEqC, S_ROLLOFF settings from config.
 - Added FEC support.
 - LNB power-off support.
@@ -27,9 +32,9 @@ v 0.2.0.1 - 2010.06.24
 	* Twinhan BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection, LNB power-off.
 	* TeVii BDA API (TeVii.dll). Raw DiSEqC, LNB power-off, Modulation type selection.	
 	* Omicom BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection.
-----------	
+----------
 
-v 0.1.0.12 - 2010.06.17
+v 0.1.0.12 - 2010.06.17 - CrazyCat
 - recompiled with latest Technotrend BDA SDK (1.0.1.21). Now use ttBdaDrvApi_Dll.dll
 - now on Google Code - http://code.google.com/p/altbda2
 ----------
@@ -131,10 +136,7 @@ It might work with other BDA compatible devices (DVB-S/T/C), but no guarantee is
 
 8) CI & IR remote will probably not ever be supported
 
-
 Parts of my work are based on the work of DCoder, nate et al from the
 the DVB Owners Discussion Forum. Good work guys! Cheers.
 
-
 Diodato
-

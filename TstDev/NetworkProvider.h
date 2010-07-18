@@ -119,19 +119,9 @@ public:
 		SpectralInversion SpectrInv,
 		ModulationType ModType,
 		LONG SymRate,
-		LONG PosOpt,
 		Polarisation Pol,
-		BinaryConvolutionCodeRate Fec);
-	HRESULT DoDVBSTuning_DiSEqC(
-		ULONG LowBandF,
-		ULONG HighBandF,
-		ULONG SwitchF,
-		ULONG Frequency,
-		SpectralInversion SpectrInv,
-		ModulationType ModType,
-		LONG SymRate,
-		Polarisation Pol,
-		BinaryConvolutionCodeRate Fec);
+		BinaryConvolutionCodeRate Fec,
+		LONG PosOpt);
 	HRESULT DoDVBTTuning(
 		ULONG Frequency,
 		ULONG Bandwidth);

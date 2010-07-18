@@ -1,7 +1,6 @@
 #ifndef BDAGRAPH_H
 #define BDAGRAPH_H
 
-
 #pragma warning( disable : 4995 4996 ) // no depreciated warnings
 
 #include "CallbackFilter.h"
@@ -77,9 +76,9 @@ public:
 		SpectralInversion SpectrInv,
 		ModulationType ModType,
 		LONG SymRate,
-		LONG PosOpt,
 		Polarisation Pol,
-		BinaryConvolutionCodeRate Fec);
+		BinaryConvolutionCodeRate Fec,
+		LONG PosOpt);
 	HRESULT DVBS_TT_Tune(
 		ULONG LowBandF,
 		ULONG HighBandF,
@@ -90,7 +89,6 @@ public:
 		LONG SymRate,
 		Polarisation Pol,
 		BinaryConvolutionCodeRate Fec,
-		BOOLEAN RawDiSEqC,
 		LONG PosOpt);
 	HRESULT DVBS_TeVii_Tune(
 		ULONG LowBandF,
@@ -126,7 +124,6 @@ public:
 		BinaryConvolutionCodeRate Fec,
 		DWORD S2RollOff,
 		DWORD S2Pilot,
-		BOOLEAN RawDiSEqC,
 		LONG PosOpt);
 	HRESULT DVBS_Conexant_Tune(
 		ULONG LowBandF,
@@ -140,7 +137,6 @@ public:
 		BinaryConvolutionCodeRate Fec,
 		DWORD S2RollOff,
 		DWORD S2Pilot,
-		BOOLEAN RawDiSEqC,
 		LONG PosOpt);
 	HRESULT DVBT_Tune(
 		ULONG Frequency,
@@ -152,6 +148,7 @@ public:
 
 	HRESULT GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
 	HRESULT GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
+	HRESULT GetTechnotrendSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
 	BOOL DVBS_Technotrend_GetProdName( char* pszProdName, size_t len );
 	HRESULT DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE tb);
 	HRESULT DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
@@ -185,8 +182,12 @@ private:
 	IBaseFilter		*m_pNetworkProvider;	// network provider filter
 	IBaseFilter		*m_pReceiver;			// receiver
 	IBaseFilter		*m_pCallbackFilter;		// calbback filter
-	IMediaControl	*m_pMediaControl;		// media control
+	IMediaControl	*m_pMediaControl;		// media control	
+#ifdef SG_USE
+	CSampleGrabberCB *pCallbackInstance;	// SampleGrabber callback object
+#else
 	CCallbackFilter	*pCallbackInstance;		// callback filter object
+#endif //SG_USE
 	IKsPropertySet	*m_pProprietaryInterface;	// tuner's proprietary interface
 	IKsControl		*m_pTunerControl;		// IKsControl for tuner
 

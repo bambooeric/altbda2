@@ -25,22 +25,6 @@
 #define _WIN32_IE 0x0600	// Change this to the appropriate value to target other versions of IE.
 #endif
 
-
-
-/*
-#include <afx.h>
-#include <afxwin.h>         // MFC core and standard components
-#include <afxext.h>         // MFC extensions
-#ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h>		// MFC support for Internet Explorer 4 Common Controls
-#endif
-#ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>			// MFC support for Windows Common Controls
-#endif // _AFX_NO_AFXCMN_SUPPORT
-
-#include <iostream>
-*/
-
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
@@ -51,6 +35,6 @@
 #include <atlstr.h>
 
 //#define TTBDADRVAPI_STATIC_LIBRARY
+//#define SG_USE
 
-// TODO: reference additional headers your program requires here
 #endif _stdafx

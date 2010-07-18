@@ -1,9 +1,7 @@
 #ifndef CONFDIALOG_H
 #define CONFDIALOG_H
 
-#include "stdafx.h"
 #include "resource.h"
-
 //#include "ChildThread.h"
 
 struct DIALOG_PARAMS

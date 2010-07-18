@@ -3,6 +3,7 @@
 #include "DvbDeviceControl.h"
 
 #define TEVII_FULL
+#define TT_FULL
 
 CDvbDeviceControl::CDvbDeviceControl(HMODULE hModule)
 {
@@ -175,9 +176,9 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					DEFAULT_INVERSION_S,
 					DEFAULT_MODULATION_S,
 					(LONG)(DEFAULT_SYMBOLRATE_S),
-					DEFAULT_POS_OPT,
 					(d->polarity == LNB_POWER_ON) ? DEFAULT_POLARISATION : BDA_POLARISATION_NOT_DEFINED,
-					DEFAULT_FEC)))
+					DEFAULT_FEC,
+					DEFAULT_POS_OPT)))
 					return AltxDVB_ERR;
 			}
 			return AltxDVB_OK;
@@ -278,7 +279,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					Fec,
 					conf_params.S2RollOff,
 					conf_params.S2Pilot,
-					PosOpt == 0xffffffff,
 					PosOpt)))
 				return AltxDVB_ERR;
 			break;
@@ -295,23 +295,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					Fec,
 					conf_params.S2RollOff,
 					conf_params.S2Pilot,
-					PosOpt == 0xffffffff,
 					PosOpt)))
-				return AltxDVB_ERR;
-			break;
-		case TT_BDA:
-			if(FAILED(BdaGraph.DVBS_TT_Tune(
-				(ULONG)(d->lnb_low),
-				(ULONG)(d->lnb_high),
-				(ULONG)(d->lnb_switch),
-				(ULONG)(d->frequency),
-				SpectrInv,
-				ModType,
-				(LONG)(d->symbol_rate),
-				Pol,
-				Fec,
-				PosOpt == 0xffffffff,
-				PosOpt)))
 				return AltxDVB_ERR;
 			break;
 #ifdef TEVII_FULL
@@ -353,9 +337,9 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				SpectrInv,
 				ModType,
 				(LONG)(d->symbol_rate),
-				PosOpt,
 				Pol,
-				Fec)))
+				Fec,
+				PosOpt)))
 				return AltxDVB_ERR;
 		}
 		break;
@@ -401,6 +385,11 @@ int CDvbDeviceControl::SignalStatistics(struct SIGNAL_STATISTICS_DATA *d)
 #ifdef TEVII_FULL
 	case TV_BDA:
 		hr = BdaGraph.GetTeViiSignalStatistics(&present,&locked,&strength,&quality);
+		break;
+#endif
+#ifdef TT_FULL
+	case TT_BDA:
+		hr = BdaGraph.GetTechnotrendSignalStatistics(&present,&locked,&strength,&quality);
 		break;
 #endif
 	default:

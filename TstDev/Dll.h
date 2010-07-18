@@ -31,7 +31,7 @@ int __declspec(dllexport) __stdcall DvbDeviceControl(int,char *);
 /* message display callback */
 typedef int (__stdcall *MSG_CB_PROC)(int,char *);
 /* stream single TS packet callback */
-typedef void (__stdcall *STR_CB_PROC)(char *);
+typedef void (__stdcall *STR_CB_PROC)(BYTE *);
 
 struct DRIVER_DATA // length 0x184 == 388B
 {

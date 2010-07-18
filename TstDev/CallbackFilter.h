@@ -24,9 +24,53 @@
 #include <strsafe.h>
 
 #include <initguid.h>
+#ifdef SG_USE
+#include <qedit.h>
+#endif //SG_USE
 
 #include "Dll.h"
 
+#ifdef SG_USE
+class CSampleGrabberCB : public ISampleGrabberCB
+{
+public:
+	CSampleGrabberCB () : Callback(NULL), packet_residue_len(0) {};
+	STDMETHODIMP_(ULONG) AddRef() { return 2; }
+	STDMETHODIMP_(ULONG) Release() { return 1; }
+
+	STDMETHODIMP QueryInterface(REFIID riid, void ** ppv)
+	{	if(riid == IID_ISampleGrabberCB || riid == IID_IUnknown)
+		{	*ppv = (void *) static_cast<ISampleGrabberCB*> (this);
+			return NOERROR;
+		}
+		return E_NOINTERFACE;
+	}
+
+	STDMETHODIMP SampleCB(double t, IMediaSample * s)
+	{
+		BYTE* buf = NULL;
+		s->GetPointer(&buf);
+		if(buf == NULL) return 0;
+		long l = s->GetSize();
+		if (s->IsPreroll() == S_OK) return 0;
+		if (s->IsDiscontinuity() == S_OK) return 0;
+		OnBufferData( buf, s->GetActualDataLength() );
+		return 0;
+	}
+
+	STDMETHODIMP BufferCB(double t, BYTE * buf, long len)
+	{	return 0;
+	}
+
+	HRESULT OnBufferData(BYTE *data, int len);
+
+	void SetStreamCallbackProcedure(STR_CB_PROC);
+private:
+	STR_CB_PROC Callback;
+	BYTE packet_residue[188];
+	size_t packet_residue_len;
+};
+#else
 DEFINE_GUID(CLSID_CallbackFilter, 
 0x260a8904, 0xfa59, 0x4789, 0x80, 0xea, 0x9a, 0x4d, 0x92, 0xbb, 0x6a, 0x9c);
 
@@ -71,7 +115,7 @@ public:
     int GetPinCount();
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void ** ppv);
 
-	HRESULT OnBufferData(char *data, int len);
+	HRESULT OnBufferData(BYTE* data, int len);
 
 	void SetStreamCallbackProcedure(STR_CB_PROC);
 /*
@@ -85,8 +129,9 @@ public:
 */
 private:
 	STR_CB_PROC Callback;
-	char packet_residue[188];
-	int packet_residue_len;
+	BYTE packet_residue[188];
+	size_t packet_residue_len;
 };
+#endif
 
 #endif /* CALLBACKFILTER_H */

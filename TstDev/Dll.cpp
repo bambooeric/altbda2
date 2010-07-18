@@ -13,8 +13,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	{
 	case DLL_PROCESS_ATTACH:
 		wrapper = new CDvbDeviceControl(hModule);
-		if(!wrapper)
-			return FALSE;
+		if(!wrapper) return FALSE;
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
@@ -123,4 +122,3 @@ int __declspec(dllexport) __stdcall DvbDeviceControl(int id, char *data)
 	}
 	return AltxDVB_OK;
 }
-

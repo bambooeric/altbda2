@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Configuration.h"
 
 CConfiguration::CConfiguration()

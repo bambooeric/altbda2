@@ -2,8 +2,6 @@
 #define CONFIGURATION_H
 
 #pragma warning( disable : 4995 4996 ) // no depreciated warnings
-
-#include "stdafx.h"
 #include "NetworkProvider.h"
 #include "Dll.h"
 

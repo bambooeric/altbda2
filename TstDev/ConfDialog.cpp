@@ -1,4 +1,4 @@
-
+#include "stdafx.h"
 #include "ConfDialog.h"
 //#include "Dialog1.h"
 
@@ -40,4 +40,3 @@ BOOLEAN CConfDialog::StartDialog()
 }
 
 //AFX_MANAGE_STATE(AfxGetStaticModuleState( ));
-
