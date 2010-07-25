@@ -135,7 +135,7 @@
 				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS"
 				RuntimeLibrary="0"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="0"
 				CallingConvention="0"
@@ -245,6 +245,22 @@
 			<File
 				RelativePath=".\stdafx.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\tbsbda.cpp"
