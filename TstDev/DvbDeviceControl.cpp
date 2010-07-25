@@ -240,7 +240,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 			case POS_B_OPT_B: PosOpt=0x101; DiSEqC_Port = 4; break;
 			case SW_NONE:
 			default:				
-				PosOpt=0xffffffff; DiSEqC_Port = DiSEqC_NULL; break;
+				PosOpt=-1L; DiSEqC_Port = DiSEqC_NULL; break;
 		}
 
 		if ( (d->switches==TONEBURST_A || d->switches==TONEBURST_B) )
@@ -251,9 +251,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				break;
 			case TH_BDA:
 				BdaGraph.DVBS_Twinhan_LNBSource(DiSEqC_Port,d->switches==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
-				break;
-			case OMC_BDA:
-				BdaGraph.DVBS_Omicom_ToneBurst(d->switches==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
 				break;
 			}
 		else if (DiSEqC_Port!=DiSEqC_NULL)

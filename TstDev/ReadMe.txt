@@ -9,6 +9,11 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.4 - 2010.07.25 - CrazyCat
+- Initial DVB-S tuning fixed (power-on, power-off).
+- Omicom S2 not support ToneBurst.
+----------
+
 v 0.2.0.3 - 2010.07.18 - CrazyCat
 - DVB-S tuning code cleanup.
 ----------

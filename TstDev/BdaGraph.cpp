@@ -1530,7 +1530,7 @@ HRESULT CBdaGraph::DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE 
 
 	TYPE_RET_VAL rc;
 	char text[256];
-	rc = bdaapiSetDiSEqCMsg(hTT,DiSEqC_Command,len,0,tb,BDA_POLARISATION_LINEAR_H);
+	rc = bdaapiSetDiSEqCMsg(hTT,DiSEqC_Command,len,0,tb,BDA_POLARISATION_LINEAR_V);
 	if (rc)
 	{
 		sprintf(text,"BDA2: DVBS_Technotrend_DiSEqC: failed - %s", ErrorMessageTTBDA(rc));

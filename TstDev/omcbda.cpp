@@ -5,7 +5,7 @@
 
 #define Z(a) memset(&a, 0, sizeof(a))
 
-HRESULT CBdaGraph::DVBS_Omicom_ToneBurst(BYTE ToneBurst)
+HRESULT CBdaGraph::DVBS_Omicom_Set22Khz(BOOL b22Khz)
 {
     CheckPointer(m_pTunerControl,E_POINTER);
 
@@ -17,17 +17,17 @@ HRESULT CBdaGraph::DVBS_Omicom_ToneBurst(BYTE ToneBurst)
 	prop.Id = KSPROPERTY_OMC_DISEQC_SET22K;
 	prop.Flags = KSPROPERTY_TYPE_SET;
     ULONG bytesReturned = 0;
-	DWORD dw22Khz = ToneBurst;
+	DWORD dw22Khz = b22Khz;
 
 	hr = m_pTunerControl->KsProperty(&prop,sizeof(prop),
 		(void*)&dw22Khz, sizeof(dw22Khz),&bytesReturned);
 	if(FAILED(hr))
 	{
-		sprintf(text,"BDA2: DVBS_Omicom_ToneBurst: failed sending KSPROPERTY_OMC_DISEQC_SET22K (0x%8.8x)", hr);
+		sprintf(text,"BDA2: DVBS_Omicom_Set22Khz: failed sending KSPROPERTY_OMC_DISEQC_SET22K (0x%8.8x)", hr);
 		ReportMessage(text);
 		return E_FAIL;
 	}
-	sprintf(text,"BDA2: DVBS_Omicom_ToneBurst: sent KSPROPERTY_OMC_DISEQC_SET22K");
+	sprintf(text,"BDA2: DVBS_Omicom_Set22Khz: sent KSPROPERTY_OMC_DISEQC_SET22K");
 	ReportMessage(text);
 
 	return S_OK;

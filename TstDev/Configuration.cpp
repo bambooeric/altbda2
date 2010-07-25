@@ -79,6 +79,11 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
 		DebugLog("BDA2: Twinhan BDA extension used !");
 		break;
+	case DW_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+		DebugLog("BDA2: DvbWolrld BDA extension used !");
+		break;
 	case HAUP_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
 		conf_params.ConfDiSEqC = DISEQC_RAW;
@@ -99,14 +104,9 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 		conf_params.ConfDiSEqC = DISEQC_RAW;
 		DebugLog("BDA2: TeVii BDA extension used !");
 		break;
-	case DW_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
-		DebugLog("BDA2: DvbWolrld BDA extension used !");
-		break;
 	case OMC_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+				conf_params.ConfDiSEqC = DISEQC_RAW;
 		DebugLog("BDA2: Omicom BDA extension used !");
 		break;
 	case WIN7_BDA:
