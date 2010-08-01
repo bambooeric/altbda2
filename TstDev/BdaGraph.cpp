@@ -1158,7 +1158,7 @@ HRESULT CBdaGraph::DVBS_Microsoft_Tune(
 
 	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
 	{
-		BOOL bEnable=TRUE;
+		BOOL bEnable=ulLNBSource>0;
 	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
 			KSPROPERTY_BDA_DISEQC_ENABLE,
 			&instance_data, sizeof(instance_data),
@@ -1168,25 +1168,7 @@ HRESULT CBdaGraph::DVBS_Microsoft_Tune(
 		else
 			sprintf(text,"BDA2: DVBS_Microsoft_Tune: DiSEqC enabled");
 		ReportMessage(text);
-	}
-    // LNBSource
-  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
-		KSPROPERTY_BDA_DISEQC_LNB_SOURCE, &supported);
-        
-	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
-	{
-        // set LNBSource
-	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
-			KSPROPERTY_BDA_DISEQC_LNB_SOURCE,
-			&instance_data, sizeof(instance_data),
-			&ulLNBSource, sizeof(ulLNBSource));
-		if FAILED(hr)
-			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set LNBSource (0x%8.8x)", hr);
-		else
-			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set LNBSource to %d", ulLNBSource);
-		ReportMessage(text);
-	}
-
+	}    
     // ToneBurst
   	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
 		KSPROPERTY_BDA_DISEQC_USETONEBURST, &supported);
@@ -1204,11 +1186,10 @@ HRESULT CBdaGraph::DVBS_Microsoft_Tune(
 			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set ToneBurst to %d", bToneBurst);
 		ReportMessage(text);
 	}
-
     // Repeats
   	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
 		KSPROPERTY_BDA_DISEQC_REPEATS, &supported);
-        
+
 	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
 	{
 		ULONG ulRepeats=2;
@@ -1221,6 +1202,23 @@ HRESULT CBdaGraph::DVBS_Microsoft_Tune(
 			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set Repeats (0x%8.8x)", hr);
 		else
 			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set Repeats to %d", ulRepeats);
+		ReportMessage(text);
+	}
+    // LNBSource
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+		KSPROPERTY_BDA_DISEQC_LNB_SOURCE, &supported);
+
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+        // set LNBSource
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_LNB_SOURCE,
+			&instance_data, sizeof(instance_data),
+			&ulLNBSource, sizeof(ulLNBSource));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set LNBSource (0x%8.8x)", hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set LNBSource to %d", ulLNBSource);
 		ReportMessage(text);
 	}
 	}
