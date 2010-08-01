@@ -24,7 +24,7 @@ HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	diseqc_msg.receive_mode = PHANTOM_RXMODE_NOREPLY;
 	diseqc_msg.b_last_message = TRUE;
 
-	hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionProperties,
+	hr = m_pKsTunerPropSet->Get(KSPROPSETID_BdaTunerExtensionProperties,
 		KSPROPERTY_BDA_DISEQC_MESSAGE,
 		&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg), &bytesReturned);
 	if(FAILED(hr))
@@ -50,7 +50,7 @@ HRESULT CBdaGraph::DVBS_Turbosight_LNBPower(BOOL bPower)
     diseqc_msg.tbscmd_mode = TBSDVBSCMD_LNBPOWER;
     diseqc_msg.b_LNBPower = bPower;
 
-	hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionProperties,
+	hr = m_pKsTunerPropSet->Get(KSPROPSETID_BdaTunerExtensionProperties,
 		KSPROPERTY_BDA_DISEQC_MESSAGE,
 		&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg), &bytesReturned);
 	if(FAILED(hr))

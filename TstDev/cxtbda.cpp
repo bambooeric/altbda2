@@ -23,7 +23,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	diseqc_msg.receive_mode = RXMODE_NOREPLY;
 	diseqc_msg.b_last_message = TRUE; // last_message
 
-	hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 		KSPROPERTY_BDA_DISEQC_MESSAGE,
 		&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg));
 	if(FAILED(hr))
@@ -59,7 +59,7 @@ HRESULT CBdaGraph::DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	diseqc_msg.b_last_message = TRUE;
 
 	KSPROPERTY instance_data;
-	hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionProperties,
+	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionProperties,
 		KSPROPERTY_BDA_DISEQC_MESSAGE,
 		&instance_data, sizeof(instance_data), &diseqc_msg, sizeof(diseqc_msg));
 	if(FAILED(hr))
@@ -80,7 +80,7 @@ HRESULT CBdaGraph::DVBS_Conexant_LNBPower(BOOL bPower)
 	char text[256];
 	KSPROPERTY instance_data;
 
-	hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionProperties,
+	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionProperties,
 		KSPROPERTY_BDA_LNB_POWER,
 		&instance_data, sizeof(instance_data), &bPower, sizeof(bPower));
 	if(FAILED(hr))

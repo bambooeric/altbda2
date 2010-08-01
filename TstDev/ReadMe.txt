@@ -9,9 +9,15 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.5 - 2010.08.01 - CrazyCat
+- Experimental Microsoft Windows7 DiSEqC BDA-extension support. Used in Windows7 Media Center (DiSEqC 1.0), if driver provide this extension.
+  Most Win7-designed BDA-drivers provide this extension only for DiSEqC 1.0, but specification support RAW DiseqC 1.x/2.x and ToneBurst.
+  Current build support only ToneBurst/DiSEqC 1.0 for this extension (but in sources implemented also RAW DiseqC support).
+- New configuration file option BDA_TYPE - preffered BDA-extension (Microsoft or TeVii). BDA extension always autodetected and this option can change priority.
+----------
+
 v 0.2.0.4 - 2010.07.25 - CrazyCat
 - Initial DVB-S tuning fixed (power-on, power-off).
-- Omicom S2 not support ToneBurst.
 ----------
 
 v 0.2.0.3 - 2010.07.18 - CrazyCat
@@ -36,7 +42,7 @@ v 0.2.0.1 - 2010.06.24 - CrazyCat
 	* Turbosight BDA extension. Raw DiSEqC, Modulation type selection, LNB power-off.
 	* Twinhan BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection, LNB power-off.
 	* TeVii BDA API (TeVii.dll). Raw DiSEqC, LNB power-off, Modulation type selection.	
-	* Omicom BDA extension. ToneBurst + Raw DiSEqC, Modulation type selection.
+	* Omicom BDA extension. Raw DiSEqC, Modulation type selection.
 ----------
 
 v 0.1.0.12 - 2010.06.17 - CrazyCat

@@ -5,6 +5,7 @@
 CConfiguration::CConfiguration()
 {
 //	pConfDialog = NULL;
+	message_callback = NULL;
 	conf_params.VendorSpecific = VENDOR_SPECIFIC(PURE_BDA);
 }
 
@@ -14,8 +15,25 @@ CConfiguration::~CConfiguration()
 //		delete(pConfDialog);
 }
 
-void CConfiguration::Configure(HINSTANCE hInstance, int selected_device_enum,
-							   char *selected_device_name)
+void CConfiguration::MessageCallback(MSG_CB_PROC callback)
+{
+	message_callback = callback;
+}
+
+void CConfiguration::ReportMessage(char *text)
+{
+	if(message_callback)
+	{
+		struct MESSAGE_CALLBACK_DATA d;
+
+		d.h = 0x0;
+		d.message = text;
+
+		message_callback(MESSAGE_CALLBACK_ID2, (char *)&d);
+	}
+}
+
+void CConfiguration::Configure(HINSTANCE hInstance)
 {
 	int len;
 
@@ -35,6 +53,64 @@ void CConfiguration::Configure(HINSTANCE hInstance, int selected_device_enum,
 			DebugLog("BDA2: DLLMain: Failed creating default configuration file");
 		else
 			DebugLog("BDA2: DLLMain: Created default configuration file");
+	}
+}
+
+void CConfiguration::ConfCaps()
+{
+	switch(conf_params.VendorSpecific)
+	{
+	case TT_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8VSB;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
+		ReportMessage("Technotrend BDA API used !");
+		break;
+	case TH_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8VSB;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
+		ReportMessage("Twinhan BDA extension used !");
+		break;
+	case DW_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
+		ReportMessage("DvbWolrld BDA extension used !");
+		break;
+	case HAUP_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Hauppauge BDA extension used !");
+		break;
+	case CXT_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Conexant BDA extension used !");
+		break;
+	case TBS_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Turbosight BDA extension used !");
+		break;
+	case TV_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("TeVii BDA extension used !");
+		break;
+	case OMC_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+				conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Omicom BDA extension used !");
+		break;
+	case MS_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED;
+				//conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
+		ReportMessage("Microsoft BDA extension used !");
+		break;
+	case PURE_BDA:
+	default:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_COMMITED;
+		ReportMessage("Generic BDA used + DiseqC 1.0 (via InputRange)!");
 	}
 }
 
@@ -67,65 +143,24 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 	else
 		sprintf(conf_params.ConfVer,"Unknown");
 
-	switch(conf_params.VendorSpecific)
-	{
-	case TT_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_8VSB;
-		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
-		DebugLog("BDA2: Technotrend BDA API used !");
-		break;
-	case TH_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_8VSB;
-		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
-		DebugLog("BDA2: Twinhan BDA extension used !");
-		break;
-	case DW_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
-		DebugLog("BDA2: DvbWolrld BDA extension used !");
-		break;
-	case HAUP_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_RAW;
-		DebugLog("BDA2: Hauppauge BDA extension used !");
-		break;
-	case CXT_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_RAW;
-		DebugLog("BDA2: Conexant BDA extension used !");
-		break;
-	case TBS_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_RAW;
-		DebugLog("BDA2: Turbosight BDA extension used !");
-		break;
-	case TV_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_RAW;
-		DebugLog("BDA2: TeVii BDA extension used !");
-		break;
-	case OMC_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-				conf_params.ConfDiSEqC = DISEQC_RAW;
-		DebugLog("BDA2: Omicom BDA extension used !");
-		break;
-	case WIN7_BDA:
-		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
-		DebugLog("BDA2: Windows7 BDA extension used !");
-		break;
-	case PURE_BDA:
-	default:
-		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-		conf_params.ConfDiSEqC = DISEQC_COMMITED;
-		DebugLog("BDA2: Generic BDA used + DiseqC 1.0 (via InputRange)!");
-		break;
-	}
-
 	strncpy(ConfFilePath, DLLFilePath, sizeof(ConfFilePath));
 	ConfFilePath[strlen(ConfFilePath)-1] = 'g';
 	ConfFilePath[strlen(ConfFilePath)-2] = 'f';
 	ConfFilePath[strlen(ConfFilePath)-3] = 'c';
+
+	ret_len = GetPrivateProfileStringA(
+		"Dev_Bda2Driver DVBS", // section
+		"BDA_TYPE", //key
+		"NOT_SET", // default string
+		ret_str,
+		sizeof(ret_str),
+		ConfFilePath);
+
+	strupr(ret_str);
+	if ( !strcmp(ret_str,"MS") || !strcmp(ret_str,"MICROSOFT") || !strcmp(ret_str,"WIN7") )
+		conf_params.VendorSpecific = MS_BDA;
+	if ( !strcmp(ret_str,"TV") || !strcmp(ret_str,"TEVII") )
+		conf_params.VendorSpecific = TV_BDA;
 
 	ret_len = GetPrivateProfileStringA(
 		"Dev_Bda2Driver DVBS", // section
@@ -134,6 +169,8 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 		ret_str,
 		sizeof(ret_str),
 		ConfFilePath);
+
+	strupr(ret_str);
 	DebugLog("BDA2: ReadConfigurationFile: S2_ROLLOFF = %s (default is NOT_SET)", ret_str);
 	if(!strcmp(ret_str,"20"))
 		conf_params.S2RollOff = ROLLOFF_20;
@@ -153,6 +190,8 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 		ret_str,
 		sizeof(ret_str),
 		ConfFilePath);
+
+	strupr(ret_str);
 	DebugLog("BDA2: ReadConfigurationFile: S2_PILOT = %s (default is NOT_SET)", ret_str);
 	if(!strcmp(ret_str,"ON"))
 		conf_params.S2Pilot = PILOT_ON;
@@ -188,8 +227,13 @@ BOOLEAN CConfiguration::CreateConfigurationFile()
 	{
 		fprintf(fp,"; Dev_Bda2Driver.int configuration parameters\n");
 		fprintf(fp,"[Dev_Bda2Driver DVBS]\n\n");
+		fprintf(fp,";Preffered BDA extension\n");
+		fprintf(fp,";   NOT_SET (default)\n");
+		fprintf(fp,";   MS - Microsoft Win7 BDA extension\n");
+		fprintf(fp,";   TV - TeVii BDA API\n");
+		fprintf(fp,"BDA_TYPE = NOT_SET\n\n");
 		fprintf(fp,";S2 Roll Off\n");
-		fprintf(fp,";   NOT_SET (default for S & S2)\n");
+		fprintf(fp,";   NOT_SET (default)\n");
 		fprintf(fp,";   20 - 0.20\n");
 		fprintf(fp,";   25 - 0.25\n");
 		fprintf(fp,";   35 - 0.35\n");

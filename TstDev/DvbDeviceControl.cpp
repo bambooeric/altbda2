@@ -59,11 +59,23 @@ int CDvbDeviceControl::DeviceDescription(struct DEVICE_DATA *d)
 
 int CDvbDeviceControl::MessageCallback(MSG_CB_PROC d)
 {
-
 	message_callback = d;
+	CConfiguration::MessageCallback(d);
 	BdaGraph.MessageCallback(d);
-
 	return AltxDVB_OK;
+}
+
+void CDvbDeviceControl::ReportMessage(char *text)
+{
+	if(message_callback)
+	{
+		struct MESSAGE_CALLBACK_DATA d;
+
+		d.h = 0x0;
+		d.message = text;
+
+		message_callback(MESSAGE_CALLBACK_ID2, (char *)&d);
+	}
 }
 
 int CDvbDeviceControl::OpenDevice(struct OPEN_DEVICE_DATA *d)
@@ -71,12 +83,12 @@ int CDvbDeviceControl::OpenDevice(struct OPEN_DEVICE_DATA *d)
 	if(sscanf(d->dev_id,"%d",&selected_device_enum) != 1)
 		return AltxDVB_ERR;
 	selected_device_type = (DEVICE_TYPE)(d->dev_type);
+	Configure(hInstance);
 	if(SUCCEEDED(BdaGraph.BuildGraph(selected_device_enum, (enum VENDOR_SPECIFIC *)&(conf_params.VendorSpecific))))
 	{
-		char selected_device_name[128];
-
-		WideCharToMultiByte(CP_ACP, 0, BdaGraph.friendly_name_tuner, -1, selected_device_name, sizeof(selected_device_name), NULL, NULL);
-		Configure(hInstance, selected_device_enum, selected_device_name);
+		//char selected_device_name[128];
+		//WideCharToMultiByte(CP_ACP, 0, BdaGraph.friendly_name_tuner, -1, selected_device_name, sizeof(selected_device_name), NULL, NULL);
+		ConfCaps();
 		if(SUCCEEDED(BdaGraph.RunGraph()))
 			return AltxDVB_OK;
 		else
@@ -128,9 +140,11 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 {
 	SpectralInversion SpectrInv;
 	ModulationType ModType;
-	LONG PosOpt;
 	Polarisation Pol;
 	BinaryConvolutionCodeRate Fec;
+	LONG PosOpt=DEFAULT_POS_OPT;
+	BYTE DiSEqC_Port=0;
+	BOOL bUseTB=FALSE;
 
 	switch(selected_device_type)
 	{
@@ -231,29 +245,34 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 			default: ModType = BDA_MOD_QPSK;
 		};
 
-		BYTE DiSEqC_Port;
 		switch(d->switches)
 		{
-			case POS_A_OPT_A: PosOpt=0x000; DiSEqC_Port = 1; break;
-			case POS_B_OPT_A: PosOpt=0x001; DiSEqC_Port = 2; break;
-			case POS_A_OPT_B: PosOpt=0x100; DiSEqC_Port = 3; break;
-			case POS_B_OPT_B: PosOpt=0x101; DiSEqC_Port = 4; break;
-			case SW_NONE:
-			default:				
-				PosOpt=-1L; DiSEqC_Port = DiSEqC_NULL; break;
+		case TONEBURST_A:
+		case TONEBURST_B:
+			bUseTB=TRUE; DiSEqC_Port=d->switches; break;
+		case POS_A_OPT_A:
+			PosOpt=0x000; DiSEqC_Port = 1; break;
+		case POS_B_OPT_A:
+			PosOpt=0x001; DiSEqC_Port = 2; break;
+		case POS_A_OPT_B:
+			PosOpt=0x100; DiSEqC_Port = 3; break;
+		case POS_B_OPT_B:
+			PosOpt=0x101; DiSEqC_Port = 4; break;
 		}
 
-		if ( (d->switches==TONEBURST_A || d->switches==TONEBURST_B) )
+		if (bUseTB)
+		{
 			switch(conf_params.VendorSpecific)
 			{
 			case TT_BDA:
-				BdaGraph.DVBS_Technotrend_DiSEqC(0,NULL,d->switches);
+				BdaGraph.DVBS_Technotrend_DiSEqC(0,NULL,DiSEqC_Port);
 				break;
 			case TH_BDA:
-				BdaGraph.DVBS_Twinhan_LNBSource(DiSEqC_Port,d->switches==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
+				BdaGraph.DVBS_Twinhan_LNBSource(DiSEqC_Port, DiSEqC_Port==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
 				break;
 			}
-		else if (DiSEqC_Port!=DiSEqC_NULL)
+		}
+		else if (DiSEqC_Port)
 			switch(conf_params.VendorSpecific)
 			{
 			case TH_BDA:
@@ -263,6 +282,23 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 
 		switch(conf_params.VendorSpecific)
 		{
+		case MS_BDA:
+			if(FAILED(BdaGraph.DVBS_Microsoft_Tune(
+					(ULONG)(d->lnb_low),
+					(ULONG)(d->lnb_high),
+					(ULONG)(d->lnb_switch),
+					(ULONG)(d->frequency),
+					SpectrInv,
+					ModType,
+					(LONG)(d->symbol_rate),
+					Pol,
+					Fec,
+					(Pilot)conf_params.S2Pilot,
+					(RollOff)conf_params.S2RollOff,
+					DiSEqC_Port,
+					bUseTB)))
+				return AltxDVB_ERR;
+			break;
 		case HAUP_BDA:
 			if(FAILED(BdaGraph.DVBS_Hauppauge_Tune(
 					(ULONG)(d->lnb_low),
@@ -274,8 +310,8 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					(LONG)(d->symbol_rate),
 					Pol,
 					Fec,
-					conf_params.S2RollOff,
 					conf_params.S2Pilot,
+					conf_params.S2RollOff,
 					PosOpt)))
 				return AltxDVB_ERR;
 			break;
@@ -290,8 +326,8 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					(LONG)(d->symbol_rate),
 					Pol,
 					Fec,
-					conf_params.S2RollOff,
 					conf_params.S2Pilot,
+					conf_params.S2RollOff,
 					PosOpt)))
 				return AltxDVB_ERR;
 			break;
@@ -417,6 +453,10 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 	switch(conf_params.VendorSpecific)
 	{
 	case PURE_BDA: return AltxDVB_ERR;
+	case MS_BDA:
+		if(BdaGraph.DVBS_Microsoft_DiSEqC(d->len, d->DiSEqC_Command,0))
+			return AltxDVB_ERR;
+		break;
 	case TT_BDA:
 		if(BdaGraph.DVBS_Technotrend_DiSEqC(d->len, d->DiSEqC_Command,0))
 			return AltxDVB_ERR;

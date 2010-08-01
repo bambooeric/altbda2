@@ -9,7 +9,7 @@ BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
 									DWORD  nOutBufferSize,
 									LPDWORD lpBytesReturned)
 {
-    if (!m_pProprietaryInterface)
+    if (!m_pKsTunerPropSet)
         return FALSE;
 
     KSPROPERTY instance_data;
@@ -26,7 +26,7 @@ BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
     THBDACmd.nOutBufferSize = nOutBufferSize;
     THBDACmd.lpBytesReturned = lpBytesReturned;
 
-    HRESULT hr = m_pProprietaryInterface->Set(GUID_THBDA_TUNER, 
+    HRESULT hr = m_pKsTunerPropSet->Set(GUID_THBDA_TUNER, 
                               NULL, 
 	  						  &instance_data, sizeof(instance_data),
                               &THBDACmd, sizeof(THBDACmd));

@@ -101,6 +101,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy to AltDVB\Devices"
+				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices"
 			/>
 		</Configuration>
 		<Configuration
@@ -187,6 +189,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy to AltDVB\Devices"
+				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices"
 			/>
 		</Configuration>
 	</Configurations>

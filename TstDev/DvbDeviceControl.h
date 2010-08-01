@@ -9,6 +9,7 @@ public:
 	int DriverDescription(struct DRIVER_DATA *);
 	int DeviceDescription(struct DEVICE_DATA *);
 	int MessageCallback(MSG_CB_PROC);
+	void ReportMessage(char *text);
 	int OpenDevice(struct OPEN_DEVICE_DATA *);
 	int CloseDevice(int *);
 	int DeviceName(struct DEVICE_NAME_DATA *);

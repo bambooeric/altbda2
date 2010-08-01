@@ -13,9 +13,9 @@
 #define DEFAULT_MOD_8PSK BDA_MOD_8VSB
 #define DEFAULT_DISEQC DISEQC_COMMITED
 
-enum VENDOR_SPECIFIC { PURE_BDA, WIN7_BDA, TT_BDA, HAUP_BDA, CXT_BDA, TBS_BDA, TH_BDA, DW_BDA, TV_BDA, OMC_BDA };
-enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1, ROLLOFF_NOT_DEFINED = 0x0,
-	ROLLOFF_20 = 0x1, ROLLOFF_25, ROLLOFF_35 };
+enum VENDOR_SPECIFIC { PURE_BDA, MS_BDA, TT_BDA, HAUP_BDA, CXT_BDA, TBS_BDA, TH_BDA, DW_BDA, TV_BDA, OMC_BDA };
+enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1, ROLLOFF_NOT_DEFINED = 0,
+	ROLLOFF_20 = 1, ROLLOFF_25, ROLLOFF_35 };
 enum S2_PILOT { PILOT_NOT_SET = -1, PILOT_NOT_DEFINED = 0x0,
 	PILOT_OFF = 0x1, PILOT_ON };
 
@@ -35,7 +35,11 @@ public:
 	CConfiguration();
 	~CConfiguration();
 
-	void Configure(HINSTANCE, int, char *);
+	void MessageCallback(MSG_CB_PROC message_callback);
+	void ReportMessage(char *text);
+
+	void Configure(HINSTANCE);
+	void ConfCaps();
 	BOOLEAN ReadConfigurationFile();
 	BOOLEAN CreateConfigurationFile();
 
@@ -46,6 +50,7 @@ public:
 	struct CONF_PARAMS conf_params;
 
 private:
+	MSG_CB_PROC message_callback;
 //	CConfDialog *pConfDialog;
 };
 

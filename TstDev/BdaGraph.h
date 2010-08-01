@@ -79,6 +79,20 @@ public:
 		Polarisation Pol,
 		BinaryConvolutionCodeRate Fec,
 		LONG PosOpt);
+	HRESULT DVBS_Microsoft_Tune(
+		ULONG LowBandF,
+		ULONG HighBandF,
+		ULONG SwitchF,
+		ULONG Frequency,
+		SpectralInversion SpectrInv,
+		ModulationType ModType,
+		LONG SymRate,
+		Polarisation Pol,
+		BinaryConvolutionCodeRate Fec,
+		Pilot S2Pilot,
+		RollOff S2RollOff,
+		ULONG LNBSource,
+		BOOL bToneBurst);
 	HRESULT DVBS_TT_Tune(
 		ULONG LowBandF,
 		ULONG HighBandF,
@@ -122,8 +136,8 @@ public:
 		LONG SymRate,
 		Polarisation Pol,
 		BinaryConvolutionCodeRate Fec,
-		DWORD S2RollOff,
 		DWORD S2Pilot,
+		DWORD S2RollOff,
 		LONG PosOpt);
 	HRESULT DVBS_Conexant_Tune(
 		ULONG LowBandF,
@@ -135,8 +149,8 @@ public:
 		LONG SymRate,
 		Polarisation Pol,
 		BinaryConvolutionCodeRate Fec,
-		DWORD S2RollOff,
 		DWORD S2Pilot,
+		DWORD S2RollOff,
 		LONG PosOpt);
 	HRESULT DVBT_Tune(
 		ULONG Frequency,
@@ -151,6 +165,7 @@ public:
 	HRESULT GetTechnotrendSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
 	BOOL DVBS_Technotrend_GetProdName( char* pszProdName, size_t len );
 	HRESULT DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE tb);
+	HRESULT DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE repeat);
 	HRESULT DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Conexant_LNBPower (BOOL bPower);
@@ -188,7 +203,8 @@ private:
 #else
 	CCallbackFilter	*pCallbackInstance;		// callback filter object
 #endif //SG_USE
-	IKsPropertySet	*m_pProprietaryInterface;	// tuner's proprietary interface
+	IKsPropertySet	*m_pKsTunerPropSet;		// Tuner proprietary interface
+	IKsPropertySet	*m_pKsDemodPropSet;		// Demod proprietary interface
 	IKsControl		*m_pTunerControl;		// IKsControl for tuner
 
 	CDVBNetworkProviderFilter *pNetworkProviderInstance; // network provider object

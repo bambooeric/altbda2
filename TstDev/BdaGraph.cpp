@@ -16,7 +16,8 @@ CBdaGraph::CBdaGraph()
 	m_pNetworkProvider = NULL;
 	m_pReceiver = NULL;
 	m_pCallbackFilter = NULL;
-	m_pProprietaryInterface = NULL;
+	m_pKsTunerPropSet = NULL;
+	m_pKsDemodPropSet = NULL;
 	m_pTunerControl = NULL;
 	m_pMediaControl = NULL;
 	pCallbackInstance = NULL;
@@ -563,6 +564,7 @@ ReportMessage(text);
 	sprintf(text,"BDA2: BuildGraph: Connected Network Provider with the Tuner filter");
 	ReportMessage(text);
 
+	VENDOR_SPECIFIC PrefBDA = *VendorSpecific;
 	*VendorSpecific = VENDOR_SPECIFIC(PURE_BDA);
 
 	// Technotrend check
@@ -591,13 +593,16 @@ ReportMessage(text);
 		TTDevCat=PREMIUM;
 
 	m_pP1 = GetOutPin(m_pTunerDevice, 0);
-	if ( m_pP1 && (TTDevCat!=UNKNOWN) )
+	// let's look if Demod exposes proprietary interfaces
+	hr = m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet);
+	if (TTDevCat!=UNKNOWN)
 	{
 		DebugLog("BDA2: BuildGraph: checking for Technotrend DiSEqC interface");
 		REGPINMEDIUM Medium;
 		memset(&Medium, 0, sizeof(Medium));//CLSID clsMedium; DWORD dw1; DWORD dw2;
 		if (GetPinMedium(m_pP1, &Medium) == S_OK)
 		{
+			
 			hTT = bdaapiOpenHWIdx(TTDevCat,Medium.dw1);
 			if (INVALID_HANDLE_VALUE!=hTT)
 			{
@@ -644,15 +649,15 @@ ReportMessage(text);
 	}
 
 	// let's look if Tuner exposes proprietary interfaces
-	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pProprietaryInterface);
+	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
 	if (hr==S_OK)
 	{
+		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");
 		ReportMessage(text);
-		DWORD supported;
 		// Hauppauge
 		DebugLog("BDA2: BuildGraph: checking for Hauppauge DiSEqC interface");
-		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
 		if(SUCCEEDED(hr) && supported)
 		{
@@ -660,7 +665,7 @@ ReportMessage(text);
 			*VendorSpecific = VENDOR_SPECIFIC(HAUP_BDA);
 		}
 		// Conexant
-		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (supported & KSPROPERTY_SUPPORT_SET) )
 		{
@@ -668,13 +673,14 @@ ReportMessage(text);
 			*VendorSpecific = VENDOR_SPECIFIC(CXT_BDA);
 		}
 		// Turbosight
-		hr = m_pProprietaryInterface->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (!(supported & KSPROPERTY_SUPPORT_SET)) )
 		{
 			DebugLog("BDA2: BuildGraph: found Turbosight DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
 		}
+		// Twinhan
 		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
 		{
 			DebugLog("BDA2: BuildGraph: found Twinhan DiSEqC interface");
@@ -682,7 +688,7 @@ ReportMessage(text);
 		}
 	}
 
-	if (*VendorSpecific == PURE_BDA)
+	if ( ((*VendorSpecific != TBS_BDA) && (*VendorSpecific != DW_BDA)) || (PrefBDA == VENDOR_SPECIFIC(TV_BDA)) )
 	{
 		char receiver_path[MAX_PATH];
 		hr = GetTunerPath(selected_device_enum, receiver_path);
@@ -700,6 +706,29 @@ ReportMessage(text);
 					DebugLog("BDA2: BuildGraph: Can't open TeVii device interface");
 				break;
 			}
+	}
+
+	if (m_pKsTunerPropSet)
+	{
+		DWORD supported=0;
+		// Microsoft
+		DebugLog("BDA2: BuildGraph: checking for Microsoft DiSEqC interface");
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_ENABLE, &supported);
+		if(SUCCEEDED(hr) && supported)
+		{
+			DebugLog("BDA2: BuildGraph: found Microsoft DiSEqC interface");
+			if ( (*VendorSpecific == VENDOR_SPECIFIC(PURE_BDA)) || (PrefBDA == VENDOR_SPECIFIC(MS_BDA)) )
+			{
+				if (*VendorSpecific == VENDOR_SPECIFIC(TT_BDA))
+					if (INVALID_HANDLE_VALUE!=hTT)
+						bdaapiClose(hTT);
+				if (*VendorSpecific == VENDOR_SPECIFIC(TV_BDA))
+					if (iTVIdx!=-1)
+						CloseDevice(iTVIdx);
+				*VendorSpecific = VENDOR_SPECIFIC(MS_BDA);
+			}
+		}
 	}
 
 	hr = S_OK;
@@ -1005,10 +1034,15 @@ void CBdaGraph::CloseGraph()
 		m_pNetworkProvider->Release();
 		m_pNetworkProvider = NULL;
 	}
-	if(m_pProprietaryInterface)
+	if(m_pKsTunerPropSet)
 	{
-		m_pProprietaryInterface->Release();
-		m_pProprietaryInterface = NULL;
+		m_pKsTunerPropSet->Release();
+		m_pKsTunerPropSet = NULL;
+	}
+	if(m_pKsDemodPropSet)
+	{
+		m_pKsDemodPropSet->Release();
+		m_pKsDemodPropSet = NULL;
 	}
 	if(m_pTunerControl)
 	{
@@ -1062,6 +1096,148 @@ HRESULT CBdaGraph::DVBS_Tune(
 			PosOpt);
 	else
 		return E_FAIL;
+}
+
+HRESULT CBdaGraph::DVBS_Microsoft_Tune(
+			ULONG LowBandF,
+			ULONG HighBandF,
+			ULONG SwitchF,
+			ULONG Frequency,
+			SpectralInversion SpectrInv,
+			ModulationType ModType,
+			LONG SymRate,
+			Polarisation Pol,
+			BinaryConvolutionCodeRate Fec,
+			Pilot S2Pilot,
+			RollOff S2RollOff,
+			ULONG ulLNBSource,
+			BOOL bToneBurst)
+{
+	char text[256];
+	HRESULT hr;
+
+	KSPROPERTY instance_data;
+	DWORD supported;
+	// S2-Pilot
+	hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_BdaDigitalDemodulator,
+		KSPROPERTY_BDA_PILOT, &supported);
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+		// set S2-Pilot
+		hr = m_pKsDemodPropSet->Set(KSPROPSETID_BdaDigitalDemodulator,
+			KSPROPERTY_BDA_PILOT,
+			&instance_data, sizeof(instance_data), &S2Pilot, sizeof(S2Pilot));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed setting Pilot to %d (hr=0x%8.8x)", S2Pilot, hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set Pilot to %d", S2Pilot);
+		ReportMessage(text);
+	}
+
+	// S2-RollOff
+	hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_BdaDigitalDemodulator,
+		KSPROPERTY_BDA_ROLL_OFF, &supported);
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+		// set S2-Pilot
+		hr = m_pKsDemodPropSet->Set(KSPROPSETID_BdaDigitalDemodulator,
+			KSPROPERTY_BDA_ROLL_OFF,
+			&instance_data, sizeof(instance_data), &S2RollOff, sizeof(S2RollOff));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed setting RollOff to %d (hr=0x%8.8x)", S2RollOff, hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set RollOff to %d", S2RollOff);
+		ReportMessage(text);
+	}
+
+	if (ulLNBSource>0)
+	{
+    // enable/disable DiSEqC
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+		KSPROPERTY_BDA_DISEQC_ENABLE, &supported);
+
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+		BOOL bEnable=TRUE;
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_ENABLE,
+			&instance_data, sizeof(instance_data),
+			&bEnable, sizeof(bEnable));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed enable DiSEqC (0x%8.8x)", hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: DiSEqC enabled");
+		ReportMessage(text);
+	}
+    // LNBSource
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+		KSPROPERTY_BDA_DISEQC_LNB_SOURCE, &supported);
+        
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+        // set LNBSource
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_LNB_SOURCE,
+			&instance_data, sizeof(instance_data),
+			&ulLNBSource, sizeof(ulLNBSource));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set LNBSource (0x%8.8x)", hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set LNBSource to %d", ulLNBSource);
+		ReportMessage(text);
+	}
+
+    // ToneBurst
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+		KSPROPERTY_BDA_DISEQC_USETONEBURST, &supported);
+        
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+        // set LNBSource
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_USETONEBURST,
+			&instance_data, sizeof(instance_data),
+			&bToneBurst, sizeof(bToneBurst));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set ToneBurst (0x%8.8x)", hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set ToneBurst to %d", bToneBurst);
+		ReportMessage(text);
+	}
+
+    // Repeats
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+		KSPROPERTY_BDA_DISEQC_REPEATS, &supported);
+        
+	if ( SUCCEEDED(hr) && ( supported & KSPROPERTY_SUPPORT_SET) )
+	{
+		ULONG ulRepeats=2;
+        // set LNBSource
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_REPEATS,
+			&instance_data, sizeof(instance_data),
+			&ulRepeats, sizeof(ulRepeats));
+		if FAILED(hr)
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: failed set Repeats (0x%8.8x)", hr);
+		else
+			sprintf(text,"BDA2: DVBS_Microsoft_Tune: set Repeats to %d", ulRepeats);
+		ReportMessage(text);
+	}
+	}
+
+	if(pNetworkProviderInstance)
+		return pNetworkProviderInstance->DoDVBSTuning(
+			LowBandF,
+			HighBandF,
+			SwitchF,
+			Frequency,
+			SpectrInv,
+			ModType,
+			SymRate,
+			Pol,
+			Fec,
+			DEFAULT_POS_OPT);
+	return E_FAIL;
 }
 
 HRESULT CBdaGraph::DVBS_TT_Tune(
@@ -1224,8 +1400,8 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			LONG SymRate,
 			Polarisation Pol,
 			BinaryConvolutionCodeRate Fec,
-			DWORD S2RollOff,
 			DWORD S2Pilot,
+			DWORD S2RollOff,
 			LONG PosOpt)
 {
 	DWORD ret_len;
@@ -1237,7 +1413,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 	{
 		// DVB-S2
 		// set Pilot
-		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+		hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_PILOT_HAUP,
 			instance, 32, &S2Pilot, sizeof(S2Pilot));
 		if(FAILED(hr))
@@ -1251,7 +1427,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (8PSK): set Pilot to %d", S2Pilot);
 			ReportMessage(text);
 		}
-		hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+		hr = m_pKsTunerPropSet->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_PILOT_HAUP,
 			instance, 32, &S2Pilot, sizeof(S2Pilot), &ret_len);
 		if(FAILED(hr))
@@ -1265,7 +1441,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			ReportMessage(text);
 		}
 		// set Roll Off
-		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+		hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_ROLLOFF_HAUP,
 			instance, 32, &S2RollOff, sizeof(S2RollOff));
 		if(FAILED(hr))
@@ -1279,7 +1455,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_Tune(
 			sprintf(text,"BDA2: DVBS_Hauppauge_Tune (8PSK): set RollOff to %d", S2RollOff);
 			ReportMessage(text);
 		}
-		hr = m_pProprietaryInterface->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
+		hr = m_pKsTunerPropSet->Get(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_ROLLOFF_HAUP,
 			instance, 32, &S2RollOff, sizeof(S2RollOff), &ret_len);
 		if(FAILED(hr))
@@ -1318,8 +1494,8 @@ HRESULT CBdaGraph::DVBS_Conexant_Tune(
 			LONG SymRate,
 			Polarisation Pol,
 			BinaryConvolutionCodeRate Fec,
-			DWORD S2RollOff,
 			DWORD S2Pilot,
+			DWORD S2RollOff,
 			LONG PosOpt)
 {
 	char text[256];
@@ -1359,7 +1535,7 @@ HRESULT CBdaGraph::DVBS_Conexant_Tune(
 		KSPROPERTY instance_data;
 
 		// set NBC Params
-		hr = m_pProprietaryInterface->Set(KSPROPSETID_BdaTunerExtensionProperties,
+		hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionProperties,
 			KSPROPERTY_BDA_NBC_PARAMS,
 			&instance_data, sizeof(instance_data), &NBCMessageParams, sizeof(NBCMessageParams));
 		if FAILED(hr)
@@ -1427,10 +1603,10 @@ HRESULT CBdaGraph::GetTechnotrendSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pL
 	rc = bdaapiGetTuneStats (hTT,stat,sizeof(stat));
 	if (rc)
 		return E_FAIL;
-	*pLocked=stat[2];
+	*pLocked=(BOOLEAN)stat[2];
 	*pStrength=stat[1];
 	*pQuality=stat[3];
-	*pPresent=stat[0];
+	*pPresent=(BOOLEAN)stat[0];
 	return S_OK;
 }
 
@@ -1537,6 +1713,83 @@ HRESULT CBdaGraph::DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE 
 		return E_FAIL;
 	}
 	sprintf(text,"BDA2: DVBS_Technotrend_DiSEqC: success");
+	ReportMessage(text);
+	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE repeats)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>8))
+		return E_INVALIDARG;
+
+	HRESULT hr = S_OK;
+    DWORD type_support = 0;
+	char text[256];
+
+	// See if a tuner property set is supported
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+												 KSPROPERTY_BDA_DISEQC_REPEATS, 
+												 &type_support);
+
+    if (type_support & KSPROPERTY_SUPPORT_SET)
+	{
+		ULONG ulRepeats = repeats;
+		KSPROPERTY instance_data;
+        // make call into driver
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_REPEATS,
+			&instance_data, sizeof(instance_data),
+			&ulRepeats, sizeof(ULONG));
+	}
+
+	BDA_DISEQC_SEND diseqc_send_req;
+	memcpy(diseqc_send_req.argbPacketData, DiSEqC_Command, len);
+	diseqc_send_req.ulPacketLength = len;
+	diseqc_send_req.ulRequestId = 1;
+
+    // See if a tuner property set is supported
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+												 KSPROPERTY_BDA_DISEQC_SEND, 
+												 &type_support);
+        
+    if (type_support & KSPROPERTY_SUPPORT_SET)
+	{
+		KSPROPERTY instance_data;
+        // make call into driver
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_SEND,
+			&instance_data, sizeof(instance_data),
+			&diseqc_send_req, sizeof(BDA_DISEQC_SEND));
+		if(FAILED(hr))
+		{
+			sprintf(text,"BDA2: DVBS_Microsoft_DiSEqC: failed sending DiSEqC command (0x%8.8x)", hr);
+			ReportMessage(text);
+			return E_FAIL;
+		}
+		sprintf(text,"BDA2: DVBS_Microsoft_DiSEqC: sent DiSEqC command");
+	}
+	else
+	{
+		sprintf(text,"BDA2: DVBS_Microsoft_DiSEqC: not supported");
+		return E_NOTIMPL;
+	}
+
+    // See if a tuner property set is supported
+  	hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+												 KSPROPERTY_BDA_DISEQC_ENABLE, 
+												 &type_support);
+    if (type_support & KSPROPERTY_SUPPORT_SET)
+	{
+		BOOL bEnable=TRUE;
+		KSPROPERTY instance_data;
+        // make call into driver
+	  	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_ENABLE,
+			&instance_data, sizeof(instance_data),
+			&bEnable, sizeof(BOOL));
+	}
+
 	ReportMessage(text);
 	return S_OK;
 }
