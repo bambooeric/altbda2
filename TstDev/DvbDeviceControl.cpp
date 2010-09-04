@@ -190,7 +190,7 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					DEFAULT_INVERSION_S,
 					DEFAULT_MODULATION_S,
 					(LONG)(DEFAULT_SYMBOLRATE_S),
-					(d->polarity == LNB_POWER_ON) ? DEFAULT_POLARISATION : BDA_POLARISATION_NOT_DEFINED,
+					(d->polarity == LNBPOWER_OFF) ? BDA_POLARISATION_NOT_DEFINED : DEFAULT_POLARISATION,
 					DEFAULT_FEC,
 					DEFAULT_POS_OPT)))
 					return AltxDVB_ERR;
@@ -454,37 +454,40 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 	{
 	case PURE_BDA: return AltxDVB_ERR;
 	case MS_BDA:
-		if(BdaGraph.DVBS_Microsoft_DiSEqC(d->len, d->DiSEqC_Command,0))
+		if(BdaGraph.DVBS_Microsoft_DiSEqC(d->len, d->DiSEqC_Command,0)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case TT_BDA:
-		if(BdaGraph.DVBS_Technotrend_DiSEqC(d->len, d->DiSEqC_Command,0))
+		if(BdaGraph.DVBS_Technotrend_DiSEqC(d->len, d->DiSEqC_Command,0)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case HAUP_BDA:
-		if(BdaGraph.DVBS_Hauppauge_DiSEqC(d->len, d->DiSEqC_Command))
+		if(BdaGraph.DVBS_Hauppauge_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 	case CXT_BDA:
-		if(BdaGraph.DVBS_Conexant_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_Conexant_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 	case TBS_BDA:
-		if(BdaGraph.DVBS_Turbosight_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_Turbosight_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case TV_BDA:
-		if(BdaGraph.DVBS_TeVii_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_TeVii_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case TH_BDA:
-		if(BdaGraph.DVBS_Twinhan_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_Twinhan_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case DW_BDA:
-		if(BdaGraph.DVBS_DvbWorld_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_DvbWorld_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case OMC_BDA:
-		if(BdaGraph.DVBS_Omicom_DiSEqC(d->len, d->DiSEqC_Command))
+		if (BdaGraph.DVBS_Omicom_Set22Khz(FALSE)!=S_OK)
+			return AltxDVB_ERR;
+		Sleep(100);
+		if (BdaGraph.DVBS_Omicom_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	}

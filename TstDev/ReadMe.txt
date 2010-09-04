@@ -9,6 +9,10 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.6 - 2010.09.04 - CrazyCat
+- Initial DVB-S tuning again fixed (power-on).
+----------
+
 v 0.2.0.5 - 2010.08.01 - CrazyCat
 - Experimental Microsoft Windows7 DiSEqC BDA-extension support. Used in Windows7 Media Center (DiSEqC 1.0), if driver provide this extension.
   Most Win7-designed BDA-drivers provide this extension only for DiSEqC 1.0, but specification support RAW DiseqC 1.x/2.x and ToneBurst.
