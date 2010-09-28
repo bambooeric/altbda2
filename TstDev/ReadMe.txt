@@ -9,6 +9,10 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.7 - 2010.09.28 - CrazyCat
+- Initial DVB-S tuning speed-up.
+----------
+
 v 0.2.0.6 - 2010.09.04 - CrazyCat
 - Initial DVB-S tuning again fixed (power-on).
 ----------
