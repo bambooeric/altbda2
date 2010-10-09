@@ -18,6 +18,7 @@ typedef enum {
     KSPROPERTY_BDA_ERROR_CONTROL,       //Custom property for controlling error correction and BER window
     KSPROPERTY_BDA_CHANNEL_INFO,        //Custom property for exposing the locked values of frequency,symbol rate etc after
                                         //corrections and adjustments
+    KSPROPERTY_BDA_NBC_PARAMS
 
 } KSPROPERTY_BDA_TUNER_EXTENSION;
 
@@ -28,18 +29,19 @@ const BYTE DISEQC_RX_BUFFER_SIZE = 8;   // reply fifo size, hardware limitation
 /* PHANTOM_LNB_BURST */
 /*******************************************************************************************************/
 typedef enum _PHANTOMLnbburst  {
-    PHANTOM_LNB_BURST_MODULATED=1,                /* Modulated: Tone B               */
-    PHANTOM_LNB_BURST_UNMODULATED,                /* Not modulated: Tone A           */
-    PHANTOM_LNB_BURST_UNDEF=0                     /* undefined (results in an error) */
-}   PHANTOM_LNB_BURST;
+    PHANTOM_LNB_BURST_UNDEF,                    /* undefined (results in an error) */
+	PHANTOM_LNB_BURST_MODULATED,                /* Modulated: Tone B               */
+    PHANTOM_LNB_BURST_UNMODULATED,              /* Not modulated: Tone A           */
+}   PHANTOM_LNB_TONEBURST;
 
 /*******************************************************************************************************/
 /* PHANTOM_LNB_TONEBURST_EN_SET */
 /*******************************************************************************************************/
 typedef enum _PHANTOMLnbToneBurstEn  {
-    PHANTOM_LNB_TONEBURST_ENABLE=1,                /* Enable tone burst               */
-    PHANTOM_LNB_TONEBURST_DISABLE                  /* Disable tone burst           */    
-}   PHANTOM_LNB_TONEBURST_EN_SET;
+    PHANTOM_LNB_TONEBURST_ENABLE,	/* Enable tone burst */
+    PHANTOM_LNB_DATABURST_ENABLE,	/* Enable tone burst */
+    PHANTOM_LNB_BURST_DISABLE		/* Disable tone burst*/    
+}   PHANTOM_LNB_BURST;
 
 /*******************************************************************************************************/
 /* PHANTOM_RXMODE */
@@ -58,7 +60,6 @@ typedef enum _TBSDVBSExtensionPropertiesCMDMode {
     TBSDVBSCMD_DISEQC=0x03              
 }   TBSDVBSExtensionPropertiesCMDMode;
 
-
 // DVB-S/S2 DiSEqC message parameters
 typedef struct _DISEQC_MESSAGE_PARAMS
 {
@@ -68,8 +69,8 @@ typedef struct _DISEQC_MESSAGE_PARAMS
     UCHAR      uc_diseqc_receive_message[DISEQC_RX_BUFFER_SIZE+1];
     UCHAR      uc_diseqc_receive_message_length;    
     
-    PHANTOM_LNB_BURST burst_tone;	//Burst tone at last-message: (modulated = ToneB; Un-modulated = ToneA). 
-    PHANTOM_RXMODE    receive_mode;	//Reply mode: interrogation/no reply/quick reply.
+    PHANTOM_LNB_TONEBURST burst_tone;	//Burst tone at last-message: (modulated = ToneB; Un-modulated = ToneA). 
+    PHANTOM_RXMODE    receive_mode;		//Reply mode: interrogation/no reply/quick reply.
     TBSDVBSExtensionPropertiesCMDMode tbscmd_mode;
 
     UCHAR      HZ_22K;			// HZ_22K_OFF | HZ_22K_ON
@@ -80,6 +81,35 @@ typedef struct _DISEQC_MESSAGE_PARAMS
     BOOL       b_LNBPower;		// liuzheng added for lnb power static
     
 } DISEQC_MESSAGE_PARAMS, *PDISEQC_MESSAGE_PARAMS;
+
+/*******************************************************************************************************/
+/* PHANTOM_ROLLOFF */
+/*******************************************************************************************************/
+typedef enum _PHANTOMRollOff  {   /* matched filter roll-off factors */
+    PHANTOM_ROLLOFF_020=0,             /*   roll-off factor is 0.2  */
+    PHANTOM_ROLLOFF_025=1,            /*   roll-off factor is 0.25 */
+    PHANTOM_ROLLOFF_035=2,            /*   roll-off factor is 0.35 */
+    PHANTOM_ROLLOFF_UNDEF=0xFF        /*   roll-off factor is undefined */
+}   PHANTOM_ROLLOFF;
+/*******************************************************************************************************/
+/* Pilot                                                                                               */
+/*******************************************************************************************************/
+typedef enum _PHANTOMPilot {
+    PHANTOM_PILOT_OFF     = 0,
+    PHANTOM_PILOT_ON      = 1,
+    PHANTOM_PILOT_UNKNOWN = 2 /* not used */
+}   PHANTOM_PILOT;
+
+// DVBS2 required channel attributes not covered by BDA
+typedef struct _BDA_NBC_PARAMS
+{
+    PHANTOM_ROLLOFF	rolloff;
+    PHANTOM_PILOT	pilot;
+	int				dvbtype;// 1 for dvbs 2 for dvbs2 0 for auto
+    BinaryConvolutionCodeRate fecrate;
+	ModulationType	modtype;
+	
+} BDA_NBC_PARAMS, *PBDA_NBC_PARAMS;
 
 //------------------------------------------------------------
 //
@@ -113,5 +143,50 @@ typedef enum
     KSPROPERTY_IRCAPTURE_COMMAND            = 1
 
 }KSPROPERTY_IRCAPTURE_PROPS;
+
+DEFINE_GUIDSTRUCT( "CBBF16AE-2A99-477e-B0D7-9C2274EB209E", KSPROPSETID_CX_GOSHAWK2_DIAG_PROP);
+#define KSPROPSETID_CX_GOSHAWK2_DIAG_PROP  DEFINE_GUIDNAMED( KSPROPSETID_CX_GOSHAWK2_DIAG_PROP )
+
+typedef enum {
+    CX_GOSHAWK2_DIAG_PROP_I2C_ACCESS             = 0,
+    CX_GOSHAWK2_DIAG_PROP_I2C_WRITE              = 1,
+    CX_GOSHAWK2_DIAG_PROP_I2C_READ               = 2,
+    CX_GOSHAWK2_DIAG_PROP_I2C_WRITE_THEN_READ    = 3    
+} CX_GOSHAWK2_DIAGNOSTIC_PROPERTIES;
+
+#define MAX_SUBADDRESS_BYTES    8
+#define MAX_I2C_BYTES           16
+#define AUDIO_ADC_I2C_ADDRESS   0x34
+#define EEPROM_I2C_ADDRESS		0xA0
+
+
+typedef enum
+{
+    KSPROPERTY_DISABLE_USERMODE_I2C = 0,
+    KSPROPERTY_ENABLE_USERMODE_I2C  = 1
+}KSPROPERTY_I2C_STATES;
+
+typedef struct _I2C_ACCESS
+{
+    KSPROPERTY_I2C_STATES state;    
+}I2C_ACCESS, *PI2C_ACCESS;
+
+typedef struct _I2C_STRUCT
+{
+    BYTE i2c_interface_select;
+    BYTE chip_address;
+    BYTE num_bytes;
+    BYTE bytes[MAX_I2C_BYTES];
+}I2C_STRUCT, *PI2C_STRUCT;
+
+typedef struct _I2C_WRITE_THEN_READ_STRUCT
+{
+    BYTE i2c_interface_select;
+    BYTE chip_address;
+    BYTE num_write_bytes;
+    BYTE write_bytes[MAX_SUBADDRESS_BYTES];
+    BYTE num_read_bytes;
+    BYTE read_bytes[MAX_I2C_BYTES];
+}I2C_WRITE_THEN_READ_STRUCT, *PI2C_WRITE_THEN_READ_STRUCT;
 
 #endif //TBSBDA_H

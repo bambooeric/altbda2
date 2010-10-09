@@ -162,6 +162,10 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				if FAILED(BdaGraph.DVBS_Turbosight_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
 				break;
+			case QBOX_BDA:
+				if FAILED(BdaGraph.DVBS_TurbosightQBOX_LNBPower(d->polarity == LNBPOWER_ON))
+					return AltxDVB_ERR;
+				break;
 			case TH_BDA:
 				if FAILED(BdaGraph.DVBS_Twinhan_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
@@ -471,6 +475,10 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 		if (BdaGraph.DVBS_Turbosight_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
+	case QBOX_BDA:
+		if (BdaGraph.DVBS_TurbosightQBOX_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
 	case TV_BDA:
 		if (BdaGraph.DVBS_TeVii_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
@@ -484,9 +492,8 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 			return AltxDVB_ERR;
 		break;
 	case OMC_BDA:
-		if (BdaGraph.DVBS_Omicom_Set22Khz(FALSE)!=S_OK)
-			return AltxDVB_ERR;
-		Sleep(100);
+		BdaGraph.DVBS_Omicom_Set22Khz(TRUE);
+		Sleep(50);
 		if (BdaGraph.DVBS_Omicom_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;

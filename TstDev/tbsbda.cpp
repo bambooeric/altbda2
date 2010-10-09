@@ -2,6 +2,7 @@
 
 #include "BdaGraph.h"
 #include "tbsbda.h"
+#include "qboxbda.h"
 
 HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
@@ -18,7 +19,7 @@ HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	memcpy(diseqc_msg.uc_diseqc_send_message, DiSEqC_Command, len);
 	diseqc_msg.uc_diseqc_send_message_length = len;
 	diseqc_msg.uc_diseqc_receive_message_length = 0;
-	diseqc_msg.Tone_Data_Burst = PHANTOM_LNB_TONEBURST_DISABLE;
+	diseqc_msg.Tone_Data_Burst = PHANTOM_LNB_BURST_DISABLE;
 	diseqc_msg.burst_tone = PHANTOM_LNB_BURST_MODULATED;
 	diseqc_msg.tbscmd_mode = TBSDVBSCMD_MOTOR;
 	diseqc_msg.receive_mode = PHANTOM_RXMODE_NOREPLY;
@@ -60,6 +61,64 @@ HRESULT CBdaGraph::DVBS_Turbosight_LNBPower(BOOL bPower)
 		return E_FAIL;
 	}
 	sprintf(text,"BDA2: DVBS_Turbosight_LNBPower: set LNB Power state");
+	ReportMessage(text);
+
+	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_TurbosightQBOX_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>5))
+		return E_INVALIDARG;
+
+	HRESULT hr;
+	ULONG bytesReturned = 0;
+	char text[256];
+
+	QBOXDVBSCMD QBOXCmd;
+    ZeroMemory(&QBOXCmd, sizeof(QBOXCmd));
+	CopyMemory(QBOXCmd.motor, DiSEqC_Command, len);
+
+	hr = m_pKsTunerPropSet->Set(KSPROPERTYSET_QBOXControl,
+		KSPROPERTY_CTRL_MOTOR,
+		NULL, 0,
+		&QBOXCmd, sizeof(QBOXCmd));
+	if(FAILED(hr))
+	{
+		sprintf(text,"BDA2: DVBS_TurbosightQBOX_DiSEqC: failed sending DISEQC_MESSAGE_PARAMS (0x%8.8x)", hr);
+		ReportMessage(text);
+		return E_FAIL;
+	}
+	sprintf(text,"BDA2: DVBS_TurbosightQBOX_DiSEqC: sent DISEQC_MESSAGE_PARAMS");
+	ReportMessage(text);
+
+	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_TurbosightQBOX_LNBPower(BOOL bLNBPower)
+{
+	HRESULT hr;
+	ULONG bytesReturned = 0;
+	char text[256];
+
+	QBOXDVBSCMD QBOXCmd;
+	DWORD type_support = 0;
+
+    ZeroMemory(&QBOXCmd, sizeof(QBOXCmd));
+	QBOXCmd.LNB_POWER = bLNBPower;
+
+	hr = m_pKsTunerPropSet->Set(KSPROPERTYSET_QBOXControl,
+		KSPROPERTY_CTRL_LNBPW,
+		NULL, 0,
+		&QBOXCmd, sizeof(QBOXCmd));
+	if(FAILED(hr))
+	{
+		sprintf(text,"BDA2: DVBS_TurbosightQBOX_LNBPower: failed set LNB Power state (0x%8.8x)", hr);
+		ReportMessage(text);
+		return E_FAIL;
+	}
+	sprintf(text,"BDA2: DVBS_TurbosightQBOX_LNBPower: set LNB Power state");
 	ReportMessage(text);
 
 	return S_OK;

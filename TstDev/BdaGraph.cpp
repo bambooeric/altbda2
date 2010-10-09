@@ -2,6 +2,7 @@
 
 #include "BdaGraph.h"
 #include "cxtbda.h"
+#include "qboxbda.h"
 #include "omcbda.h"
 #include <TeVii.h>
 
@@ -679,6 +680,14 @@ ReportMessage(text);
 		{
 			DebugLog("BDA2: BuildGraph: found Turbosight DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
+		}
+		// Turbosight QBOX
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
+			KSPROPERTY_CTRL_MOTOR, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Turbosight QBOX DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
 		}
 		// Twinhan
 		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
