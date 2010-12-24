@@ -19,6 +19,7 @@ CBdaGraph::CBdaGraph()
 	m_pCallbackFilter = NULL;
 	m_pKsTunerPropSet = NULL;
 	m_pKsDemodPropSet = NULL;
+	m_pKsTunerFilterPropSet = NULL;
 	m_pTunerControl = NULL;
 	m_pMediaControl = NULL;
 	pCallbackInstance = NULL;
@@ -650,6 +651,21 @@ ReportMessage(text);
 	}
 
 	// let's look if Tuner exposes proprietary interfaces
+	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet);
+	if (hr==S_OK)
+	{
+		DWORD supported;
+		// Turbosight QBOX
+		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
+			KSPROPERTY_CTRL_MOTOR, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Turbosight QBOX DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
+		}
+	}
+
+	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
 	if (hr==S_OK)
 	{
@@ -680,14 +696,6 @@ ReportMessage(text);
 		{
 			DebugLog("BDA2: BuildGraph: found Turbosight DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
-		}
-		// Turbosight QBOX
-		hr = m_pKsTunerPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
-			KSPROPERTY_CTRL_MOTOR, &supported);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
-		{
-			DebugLog("BDA2: BuildGraph: found Turbosight QBOX DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
 		}
 		// Twinhan
 		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
@@ -1052,6 +1060,11 @@ void CBdaGraph::CloseGraph()
 	{
 		m_pKsDemodPropSet->Release();
 		m_pKsDemodPropSet = NULL;
+	}
+	if(m_pKsTunerFilterPropSet)
+	{
+		m_pKsTunerFilterPropSet->Release();
+		m_pKsTunerFilterPropSet = NULL;
 	}
 	if(m_pTunerControl)
 	{

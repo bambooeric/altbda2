@@ -80,7 +80,7 @@ HRESULT CBdaGraph::DVBS_TurbosightQBOX_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
     ZeroMemory(&QBOXCmd, sizeof(QBOXCmd));
 	CopyMemory(QBOXCmd.motor, DiSEqC_Command, len);
 
-	hr = m_pKsTunerPropSet->Set(KSPROPERTYSET_QBOXControl,
+	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_QBOXControl,
 		KSPROPERTY_CTRL_MOTOR,
 		NULL, 0,
 		&QBOXCmd, sizeof(QBOXCmd));
@@ -108,7 +108,7 @@ HRESULT CBdaGraph::DVBS_TurbosightQBOX_LNBPower(BOOL bLNBPower)
     ZeroMemory(&QBOXCmd, sizeof(QBOXCmd));
 	QBOXCmd.LNB_POWER = bLNBPower;
 
-	hr = m_pKsTunerPropSet->Set(KSPROPERTYSET_QBOXControl,
+	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_QBOXControl,
 		KSPROPERTY_CTRL_LNBPW,
 		NULL, 0,
 		&QBOXCmd, sizeof(QBOXCmd));

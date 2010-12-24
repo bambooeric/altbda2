@@ -205,6 +205,7 @@ private:
 #else
 	CCallbackFilter	*pCallbackInstance;		// callback filter object
 #endif //SG_USE
+	IKsPropertySet	*m_pKsTunerFilterPropSet; // Tuner filter proprietary interface
 	IKsPropertySet	*m_pKsTunerPropSet;		// Tuner proprietary interface
 	IKsPropertySet	*m_pKsDemodPropSet;		// Demod proprietary interface
 	IKsControl		*m_pTunerControl;		// IKsControl for tuner
