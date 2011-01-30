@@ -9,6 +9,10 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.9 - 2011.01.30 - CrazyCat
+- Turbosight QBOXs (and ODM like Prof 1100, MatchBox Pro) support fixed (DiSEqC 1.x, LNB power control).
+----------
+
 v 0.2.0.8 - 2010.10.09 - CrazyCat
 - Revert 0.2.0.7 changes (LNB power-on failed for some devices).
 - Omicom S2 DiSEqC 1.x minor fix (enable continous 22Khz (50ms) before DiSEqC command).
