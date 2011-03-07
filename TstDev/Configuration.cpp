@@ -133,10 +133,10 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 		{
 			VS_FIXEDFILEINFO *vs = (VS_FIXEDFILEINFO *)ptr;
 			sprintf(conf_params.ConfVer, "v%d.%d.%d.%d",
-				vs->dwFileVersionMS & 0xFFFF0000,
-				vs->dwFileVersionMS & 0x0000FFFF,
-				vs->dwFileVersionLS & 0xFFFF0000,
-				vs->dwFileVersionLS & 0x0000FFFF);
+				HIWORD(vs->dwFileVersionMS),
+				LOWORD(vs->dwFileVersionMS),
+				HIWORD(vs->dwFileVersionLS),
+				LOWORD(vs->dwFileVersionLS));
 		}
 		free(fv_data);
 	}
