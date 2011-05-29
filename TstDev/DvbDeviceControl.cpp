@@ -475,6 +475,10 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 		if (BdaGraph.DVBS_Turbosight_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
+	case TBS_NXP_BDA:
+		if (BdaGraph.DVBS_TurbosightNXP_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
 	case QBOX_BDA:
 		if (BdaGraph.DVBS_TurbosightQBOX_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;

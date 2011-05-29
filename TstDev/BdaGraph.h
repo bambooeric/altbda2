@@ -168,11 +168,12 @@ public:
 	HRESULT DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE repeat);
 	HRESULT DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
-	HRESULT DVBS_Conexant_LNBPower (BOOL bPower);
+	HRESULT DVBS_Conexant_LNBPower (BOOL bPower);	
 	HRESULT DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Turbosight_LNBPower (BOOL bPower);
 	HRESULT DVBS_TurbosightQBOX_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_TurbosightQBOX_LNBPower (BOOL bPower);
+	HRESULT DVBS_TurbosightNXP_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Twinhan_LNBPower(BOOL bPower);

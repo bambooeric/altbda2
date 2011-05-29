@@ -4,6 +4,35 @@
 #include "tbsbda.h"
 #include "qboxbda.h"
 
+HRESULT CBdaGraph::DVBS_TurbosightNXP_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if ((len==0) || (len>6))
+		return E_INVALIDARG;
+
+	HRESULT hr;
+	char text[256];
+
+	TBSDISEQC_MESSAGE_PARAMS diseqc_msg;
+	memset(&diseqc_msg,0,sizeof(diseqc_msg));
+	CopyMemory(diseqc_msg.uc_diseqc_send_message, DiSEqC_Command, len);
+	diseqc_msg.uc_diseqc_send_message_length = len;
+
+	hr = m_pKsTunerPropSet->Set(KSPROPSETID_BdaTunerExtensionProperties,
+		KSPROPERTY_BDA_DISEQC_MESSAGE,
+		&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg));
+	if(FAILED(hr))
+	{
+		sprintf(text,"BDA2: DVBS_TurbosightNXP_DiSEqC: failed sending TBSDISEQC_MESSAGE_PARAMS (0x%8.8x)", hr);
+		ReportMessage(text);
+		return E_FAIL;
+	}
+	sprintf(text,"BDA2: DVBS_TurbosightNXP_DiSEqC: sent TBSDISEQC_MESSAGE_PARAMS");
+	ReportMessage(text);
+
+	return S_OK;
+}
+
 HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
 	CheckPointer(DiSEqC_Command,E_POINTER);

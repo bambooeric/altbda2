@@ -88,7 +88,17 @@ void CConfiguration::ConfCaps()
 	case TBS_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
 		conf_params.ConfDiSEqC = DISEQC_RAW;
-		ReportMessage("Turbosight BDA extension used !");
+		ReportMessage("Turbosight-Conexant BDA extension used !");
+		break;
+	case TBS_NXP_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Turbosight-NXP BDA extension used !");
+		break;
+	case QBOX_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Turbosight-QBOX BDA extension used !");
 		break;
 	case TV_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_8PSK;

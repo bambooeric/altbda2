@@ -82,6 +82,15 @@ typedef struct _DISEQC_MESSAGE_PARAMS
     
 } DISEQC_MESSAGE_PARAMS, *PDISEQC_MESSAGE_PARAMS;
 
+//added 2011 01 27 liuy
+typedef struct TBSDISEQC_MESSAGE_PARAMS
+{
+	UCHAR      uc_diseqc_send_message[10];
+	UCHAR      uc_diseqc_send_message_length;
+
+} TBSDISEQC_MESSAGE_PARAMS;
+//end 2011 01 27
+
 /*******************************************************************************************************/
 /* PHANTOM_ROLLOFF */
 /*******************************************************************************************************/

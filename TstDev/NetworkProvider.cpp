@@ -631,6 +631,20 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 	}
 
 	hr = StartChanges(RegisteredDevices[device_index].Control);
+
+	if (!SwitchF)
+	{
+		if ((!LowBandF) && HighBandF)
+		{
+			SwitchF = Frequency-1000;
+			LowBandF = HighBandF;
+		} else if (LowBandF && (!HighBandF))
+		{
+			SwitchF = Frequency+1000;
+			HighBandF = LowBandF;
+		}
+	}
+
 	hr = pLNB->put_LocalOscilatorFrequencyLowBand(LowBandF);
 	if(FAILED(hr))
 		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_LocalOscilatorFrequencyLowBand");

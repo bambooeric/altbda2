@@ -660,7 +660,7 @@ ReportMessage(text);
 			KSPROPERTY_CTRL_MOTOR, &supported);
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
 		{
-			DebugLog("BDA2: BuildGraph: found Turbosight QBOX DiSEqC interface");
+			DebugLog("BDA2: BuildGraph: found Turbosight-QBOX DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
 		}
 	}
@@ -694,8 +694,13 @@ ReportMessage(text);
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (!(supported & KSPROPERTY_SUPPORT_SET)) )
 		{
-			DebugLog("BDA2: BuildGraph: found Turbosight DiSEqC interface");
+			DebugLog("BDA2: BuildGraph: found Turbosight-Conexant DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
+		}
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+		{
+			DebugLog("BDA2: BuildGraph: found Turbosight-NXP DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(TBS_NXP_BDA);
 		}
 		// Twinhan
 		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
@@ -1372,6 +1377,19 @@ HRESULT CBdaGraph::DVBS_TeVii_Tune(
 		TVFec=TFEC_AUTO;
 	}
 
+	if (!SwitchF)
+	{
+		if ((!LowBandF) && HighBandF)
+		{
+			SwitchF = Frequency-1000;
+			LowBandF = HighBandF;
+		} else if (LowBandF && (!HighBandF))
+		{
+			SwitchF = Frequency+1000;
+			HighBandF = LowBandF;
+		}
+	}
+
 	if (TuneTransponder(iTVIdx, Frequency, SymRate*1000, Frequency > SwitchF ? HighBandF:LowBandF, TVPol,
 		Frequency > SwitchF, TVMod, TVFec))
 		return S_OK;
@@ -1404,6 +1422,19 @@ HRESULT CBdaGraph::DVBS_DvbWorld_Tune(
 	case BDA_POLARISATION_LINEAR_V:
 	case BDA_POLARISATION_CIRCULAR_R:
 		pol=0;break;
+	}
+
+	if (!SwitchF)
+	{
+		if ((!LowBandF) && HighBandF)
+		{
+			SwitchF = Frequency-1000;
+			LowBandF = HighBandF;
+		} else if (LowBandF && (!HighBandF))
+		{
+			SwitchF = Frequency+1000;
+			HighBandF = LowBandF;
+		}
 	}
 
 	return dwBDATune(hDW,Frequency,SymRate,Frequency > SwitchF ? HighBandF:LowBandF,pol,Frequency > SwitchF,Fec,
