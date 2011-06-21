@@ -11,7 +11,6 @@ CDvbDeviceControl::CDvbDeviceControl(HMODULE hModule)
 	stream_callback = NULL;
 	selected_device_enum = 0;
 	message_callback = NULL;
-	ConfigurationFileExists = FALSE;
 	conf_params.ConfVer[0] = 0x0;
 	conf_params.ConfMod8PSK = DEFAULT_MOD_8PSK;
 	conf_params.ConfDiSEqC = DEFAULT_DISEQC;

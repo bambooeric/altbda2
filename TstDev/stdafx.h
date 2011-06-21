@@ -27,14 +27,27 @@
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
-#include <windows.h>
+//#include <windows.h>
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// some CString constructors will be explicit
 
-#include <atlbase.h>
-#include <atlstr.h>
+//#include <atlbase.h>
+//#include <atlstr.h>
 
-//#define TTBDADRVAPI_STATIC_LIBRARY
-//#define SG_USE
+// turns off MFC's hiding of some common and often safely ignored warning messages
+#define _AFX_ALL_WARNINGS
+
+#include <afxwin.h>         // MFC core and standard components
+#include <afxext.h>         // MFC extensions
+#include <afxdisp.h>        // MFC Automation classes
+
+#include <afxdtctl.h>		// MFC support for Internet Explorer 4 Common Controls
+#ifndef _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>			// MFC support for Windows Common Controls
+#endif // _AFX_NO_AFXCMN_SUPPORT
+
+//#include <afxtempl.h>
+
+void DebugLog( const char *format, ... );
 
 #endif _stdafx

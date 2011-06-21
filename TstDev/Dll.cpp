@@ -6,29 +6,55 @@
 
 CDvbDeviceControl *wrapper = NULL;
 
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+class CDllTstDevApp : public CWinApp
 {
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		wrapper = new CDvbDeviceControl(hModule);
-		if(!wrapper) return FALSE;
-		break;
-	case DLL_THREAD_ATTACH:
-		break;
-	case DLL_PROCESS_DETACH:
-		if(wrapper)
-			delete(wrapper);
-		break;
-	case DLL_THREAD_DETACH:
-		break;
-	}
-    return TRUE;
+public:
+	CDllTstDevApp();
+
+// Overrides
+public:
+	virtual BOOL InitInstance();
+
+	DECLARE_MESSAGE_MAP()
+};
+
+// CDllTstDevApp
+BEGIN_MESSAGE_MAP(CDllTstDevApp, CWinApp)
+END_MESSAGE_MAP()
+
+// CDllTstDevApp construction
+CDllTstDevApp::CDllTstDevApp()
+{
+	// TODO: add construction code here,
+	// Place all significant initialization in InitInstance
+}
+
+// The one and only CDllScreenCapApp object
+CDllTstDevApp theApp;
+
+// CDllTstDevApp initialization
+BOOL CDllTstDevApp::InitInstance()
+{
+	CWinApp::InitInstance();
+
+	char szAppPath[MAX_PATH];
+	GetModuleFileName(AfxGetInstanceHandle(),szAppPath,MAX_PATH);
+	free((void*)m_pszExeName);
+	m_pszExeName = _strdup(szAppPath);
+	char* pszTmp = strrchr(szAppPath,'.');
+	if (pszTmp) *pszTmp='\0';
+
+	strcat(szAppPath,".cfg");
+	free((void*)m_pszProfileName);
+	m_pszProfileName = _strdup(szAppPath);
+
+	wrapper = new CDvbDeviceControl(AfxGetInstanceHandle());
+	return wrapper!=NULL;
 }
 
 int __declspec(dllexport) __stdcall DvbDeviceControl(int id, char *data)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState())
 	switch(id)
 	{
 	case DRIVER_DESCRIPTION: /* get driver description */
@@ -121,4 +147,19 @@ int __declspec(dllexport) __stdcall DvbDeviceControl(int id, char *data)
 		}
 	}
 	return AltxDVB_OK;
+}
+
+void DebugLog( const char *format, ... )
+{
+	char buffer[1024] = { 0 };
+
+	va_list args;
+	va_start( args, format );
+
+	vsprintf_s( buffer, _vscprintf( format, args )+1, format, args );
+
+	va_end( format );
+
+	OutputDebugStringA( buffer );
+	OutputDebugStringA("\n");
 }

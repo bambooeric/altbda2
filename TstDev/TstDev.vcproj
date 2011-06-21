@@ -25,7 +25,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			UseOfMFC="0"
+			UseOfMFC="2"
 			CharacterSet="0"
 			>
 			<Tool
@@ -111,7 +111,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			UseOfMFC="0"
+			UseOfMFC="2"
 			UseOfATL="0"
 			CharacterSet="0"
 			ManagedExtensions="0"
@@ -137,7 +137,7 @@
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS;TTBDADRVAPI_STATIC_LIBRARY"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="0"
@@ -358,5 +358,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="DvbDeviceControl.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

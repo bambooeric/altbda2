@@ -13,7 +13,7 @@ HRESULT CDVBNetworkProviderPin::CheckMediaType(const CMediaType* pmt)
 
 	if(! IsEqualGUID(pmt->majortype, KSDATAFORMAT_TYPE_BDA_ANTENNA))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderPin.CheckMediaType: Wrong MajorType BDA Antenna");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.CheckMediaType: Wrong MajorType BDA Antenna")));
 		return VFW_E_INVALIDMEDIATYPE;
 	}
     return S_OK;
@@ -33,14 +33,14 @@ HRESULT CDVBNetworkProviderPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATO
     hr = pAlloc->SetProperties(pRequest, &Actual);
     if (FAILED(hr)) 
     {
-		DebugLog("BDA2: CDVBNetworkProviderPin.DecideBufferSize: failed setting properties of Allocator");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.DecideBufferSize: failed setting properties of Allocator")));
         return hr;
     }
 
     // Is this allocator unsuitable?
     if (Actual.cbBuffer < pRequest->cbBuffer) 
     {
-		DebugLog("BDA2: CDVBNetworkProviderPin.DecideBufferSize: unsuitable Allocator");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.DecideBufferSize: unsuitable Allocator")));
         return E_FAIL;
     }
 
@@ -56,7 +56,7 @@ HRESULT CDVBNetworkProviderPin::CompleteConnect(IPin *pReceivePin)
 	hr = pFilter->CreateOutputPin(pReceivePin);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderPin.CompleteConnect.CreateOutputPin: failed");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.CompleteConnect.CreateOutputPin: failed")));
 		return hr;
 	}
 */
@@ -70,7 +70,7 @@ HRESULT CDVBNetworkProviderPin::Run(REFERENCE_TIME tStart)
 	pin = GetConnected();
 	if (pin == NULL)
 	{
-		DebugLog("BDA2: CDVBNetworkProviderPin.Run: connected Pin is NULL");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.Run: connected Pin is NULL")));
 		return E_FAIL;
 	}
 
@@ -79,7 +79,7 @@ HRESULT CDVBNetworkProviderPin::Run(REFERENCE_TIME tStart)
 	hr = pFilter->CreateOutputPin(pin);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderPin.Run: CreateOutputPin Failed");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderPin.Run: CreateOutputPin Failed")));
 		return hr;
 	}
 	*/
@@ -221,18 +221,18 @@ STDMETHODIMP CDVBNetworkProviderFilter::RegisterDeviceFilter(IUnknown *pUnkFilte
 		RegisteredDevices[SID].Control = pUnkFilterControl;
 		RegisteredDevices[SID].ID = SID;
 		*ppvRegisitrationContext = ++SID;
-		DebugLog("BDA2: CDVBNetworkProviderFilter::RegisterDeviceFilter: succeeded SID=%d", SID);
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::RegisterDeviceFilter: succeeded SID=%d"), SID));
 	}
 	else
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter::RegisterDeviceFilter: failed");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::RegisterDeviceFilter: failed")));
 		return E_FAIL;
 	}
 	return S_OK;
 }
 STDMETHODIMP CDVBNetworkProviderFilter::UnRegisterDeviceFilter(ULONG pvRegistrationContext)
 {
-	DebugLog("BDA2: CDVBNetworkProviderFilter::UnRegisterDeviceFilter: succeeded SID=%d", SID);
+	DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::UnRegisterDeviceFilter: succeeded SID=%d"), SID));
 	--SID;
 	return S_OK;
 }
@@ -338,24 +338,24 @@ HRESULT CDVBNetworkProviderFilter::CreateOutputPin(IPin *Apin)
 						}
 					}
 					else
-						DebugLog("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed enumerating Pins");
+						DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed enumerating Pins")));
 				}
 				else
-					DebugLog("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed getting Pin types");
+					DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed getting Pin types")));
 			}
 			else
-				DebugLog("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed getting Topology interface");
+				DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed getting Topology interface")));
 		}
 		else
-			DebugLog("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: Filter for Pin is NULL");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: Filter for Pin is NULL")));
 	}
 	else
-		DebugLog("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed querying pin info");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter::CreateOutputPin: failed querying pin info")));
 	if((topology != NULL) && SUCCEEDED(hr))
 		hr = topology->CreateTopology(pinIn, pinOut);
 	else
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.CreateOutputPin: failed CreateTopology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.CreateOutputPin: failed CreateTopology")));
 		hr = E_FAIL;
 	}
 	return hr;
@@ -390,25 +390,25 @@ HRESULT CDVBNetworkProviderFilter::GetMultipleTopology(IBaseFilter *p_Filter, GU
 								}
 								else
 								{
-									DebugLog("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting Node's interface");
+									DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting Node's interface")));
 									p_IUnknown->Release();
 									return E_FAIL;
 								}
 							}
 							else
-								DebugLog("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting ControlNodes");
+								DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting ControlNodes")));
 					}
 				else
-					DebugLog("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting NodeInterfaces");
+					DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting NodeInterfaces")));
 			}
 			p_Topology->Release();
 			return S_OK;
 		}
 		else
-			DebugLog("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting NodeTypes");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting NodeTypes")));
 		p_Topology->Release();
 	}
-	DebugLog("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting Topology");
+	DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetMultipleTopology: failed getting Topology")));
 
 	return E_FAIL;
 }
@@ -439,22 +439,22 @@ HRESULT CDVBNetworkProviderFilter::GetTopology(IBaseFilter *p_Filter, GUID Topol
 								}
 								else
 								{
-									DebugLog("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting Node's interface");
+									DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting Node's interface")));
 									p_IUnknown->Release();
 									return E_FAIL;
 								}
 							}
 							else
-								DebugLog("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting ControlNodes");
+								DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting ControlNodes")));
 					}
 				else
-					DebugLog("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting NodeInterfaces");
+					DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting NodeInterfaces")));
 			}
 		else
-			DebugLog("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting NodeTypes");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting NodeTypes")));
 		p_Topology->Release();
 	}
-	DebugLog("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting Topology");
+	DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetTopology: failed getting Topology")));
 
 	return E_FAIL;
 }
@@ -493,7 +493,7 @@ HRESULT CDVBNetworkProviderFilter::GetSignalStatistics(
 			hr = RegisteredDevices[device_index].Control->QueryInterface(IID_IBaseFilter, (void **)&filt);
 			if(FAILED(hr))
 			{
-				DebugLog("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed getting Control device Interface");
+				DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed getting Control device Interface")));
 				return hr;
 			}
 			hr = GetMultipleTopology(filt, IID_IBDA_SignalStatistics, &node_cnt, (void **)pSignalStatistics);
@@ -502,7 +502,7 @@ HRESULT CDVBNetworkProviderFilter::GetSignalStatistics(
 		}
 		if(device_index == SID)
 		{
-			DebugLog("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed finding IBDA_SignalStatistics topology");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed finding IBDA_SignalStatistics topology")));
 			return E_FAIL;
 		}
 		for(int i=0; i<node_cnt; ++i)
@@ -532,7 +532,7 @@ HRESULT CDVBNetworkProviderFilter::GetSignalStatistics(
 		}
 		if(node_cnt == 0)
 		{
-			DebugLog("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed getting Signal Statistics");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.GetSignalStatistics: failed getting Signal Statistics")));
 			return E_FAIL;
 		}
 	}
@@ -547,12 +547,12 @@ HRESULT CDVBNetworkProviderFilter::StartChanges(IUnknown *Control)
 	hr = Control->QueryInterface(IID_IBDA_DeviceControl, (void **)&ctrl);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.StartChanges: failed getting Control device Interface");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.StartChanges: failed getting Control device Interface")));
 		return hr;
 	}
 	hr = ctrl->StartChanges();
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.StartChanges: failed");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.StartChanges: failed")));
 	return hr;
 }
 
@@ -564,19 +564,19 @@ HRESULT CDVBNetworkProviderFilter::CommitChanges(IUnknown *Control)
 	hr = Control->QueryInterface(IID_IBDA_DeviceControl, (void **)&ctrl);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed getting Control device Interface");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed getting Control device Interface")));
 		return hr;
 	}
 	Sleep(50);
 	hr = ctrl->CheckChanges();
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed CheckChanges");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed CheckChanges")));
 		return hr;
 	}
 	hr = ctrl->CommitChanges();
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed CommitChanges");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.CommitChanges: failed CommitChanges")));
 	return hr;
 }
 
@@ -605,7 +605,7 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 		hr = RegisteredDevices[device_index].Control->QueryInterface(IID_IBaseFilter, (void **)&filt);
 		if(FAILED(hr))
 		{
-			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed getting Control device Interface");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed getting Control device Interface")));
 			return hr;
 		}
 		hr = GetTopology(filt, IID_IBDA_FrequencyFilter, (void **)&pFreqFilter);
@@ -614,19 +614,19 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 	}
 	if(device_index == SID)
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_FrequencyFilter topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_FrequencyFilter topology")));
 		return E_FAIL;
 	}
 	hr = GetTopology(filt, IID_IBDA_DigitalDemodulator, (void **)&pDemodFilter);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_DigitalDemodulator topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_DigitalDemodulator topology")));
 		return E_FAIL;
 	}
 	hr = GetTopology(filt, IID_IBDA_LNBInfo, (void **)&pLNB);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_LNBInfo topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_LNBInfo topology")));
 		return E_FAIL;
 	}
 
@@ -647,47 +647,47 @@ HRESULT CDVBNetworkProviderFilter::DoDVBSTuning(
 
 	hr = pLNB->put_LocalOscilatorFrequencyLowBand(LowBandF);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_LocalOscilatorFrequencyLowBand");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_LocalOscilatorFrequencyLowBand")));
 	hr = pLNB->put_LocalOscilatorFrequencyHighBand(HighBandF);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_LocalOscilatorFrequencyHighBand");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_LocalOscilatorFrequencyHighBand")));
 	hr = pLNB->put_HighLowSwitchFrequency(SwitchF);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_HighLowSwitchFrequency");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_HighLowSwitchFrequency")));
 	hr = pFreqFilter->put_Range(PosOpt);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range")));
 	else
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x",PosOpt);
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: put_Range 0x%4.4x"),PosOpt));
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Range")));
 	hr = pFreqFilter->put_Polarity(Pol);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Polarity");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Polarity")));
 	hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_FrequencyMultiplier");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_FrequencyMultiplier")));
 	hr = pFreqFilter->put_Frequency(Frequency);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Frequency");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Frequency")));
 	hr = pDemodFilter->put_SpectralInversion(&SpectrInv);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_SpectralInversion");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_SpectralInversion")));
 	hr = pDemodFilter->put_ModulationType(&ModType);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_ModulationType");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_ModulationType")));
 	hr = pDemodFilter->put_SymbolRate((ULONG *)&SymRate);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_SymbolRate");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_SymbolRate")));
 	/*
 	FECMethod FecMethod=BDA_FEC_VITERBI;
 	hr = pDemodFilter->put_InnerFECMethod(&FecMethod);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate")));
 	*/
 	hr = pDemodFilter->put_InnerFECRate(&Fec);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_InnerFECRate")));
 	hr = CommitChanges(RegisteredDevices[device_index].Control);
 	return hr;
 }
@@ -707,7 +707,7 @@ HRESULT CDVBNetworkProviderFilter::DoDVBTTuning(
 		hr = RegisteredDevices[device_index].Control->QueryInterface(IID_IBaseFilter, (void **)&filt);
 		if(FAILED(hr))
 		{
-			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed getting Control device Interface");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed getting Control device Interface")));
 			return hr;
 		}
 		hr = GetTopology(filt, IID_IBDA_FrequencyFilter, (void **)&pFreqFilter);
@@ -716,21 +716,21 @@ HRESULT CDVBNetworkProviderFilter::DoDVBTTuning(
 	}
 	if(device_index == SID)
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed finding IBDA_FrequencyFilter topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed finding IBDA_FrequencyFilter topology")));
 		return E_FAIL;
 	}
 
 	hr = StartChanges(RegisteredDevices[device_index].Control);
 	hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 //	if(FAILED(hr))
-//		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_FrequencyMultiplier");
+//		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_FrequencyMultiplier")));
 	hr = pFreqFilter->put_Bandwidth(Bandwidth); // *1000?????????????
 		// removed *1000 to satisfy Airstar2 with Technisat 4.4.1 drivers
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_Bandwidth");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_Bandwidth")));
 	hr = pFreqFilter->put_Frequency(Frequency);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_Frequency");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBTTuning: failed put_Frequency")));
 	hr = CommitChanges(RegisteredDevices[device_index].Control);
 	return hr;
 }
@@ -752,7 +752,7 @@ HRESULT CDVBNetworkProviderFilter::DoDVBCTuning(
 		hr = RegisteredDevices[device_index].Control->QueryInterface(IID_IBaseFilter, (void **)&filt);
 		if(FAILED(hr))
 		{
-			DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed getting Control device Interface");
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed getting Control device Interface")));
 			return hr;
 		}
 		hr = GetTopology(filt, IID_IBDA_FrequencyFilter, (void **)&pFreqFilter);
@@ -761,29 +761,29 @@ HRESULT CDVBNetworkProviderFilter::DoDVBCTuning(
 	}
 	if(device_index == SID)
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed finding IBDA_FrequencyFilter topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed finding IBDA_FrequencyFilter topology")));
 		return E_FAIL;
 	}
 	hr = GetTopology(filt, IID_IBDA_DigitalDemodulator, (void **)&pDemodFilter);
 	if(FAILED(hr))
 	{
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed finding IBDA_DigitalDemodulator topology");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed finding IBDA_DigitalDemodulator topology")));
 		return E_FAIL;
 	}
 
 	hr = StartChanges(RegisteredDevices[device_index].Control);
 	hr = pFreqFilter->put_FrequencyMultiplier(1000L);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_FrequencyMultiplier");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_FrequencyMultiplier")));
 	hr = pFreqFilter->put_Frequency(Frequency);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_Frequency");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_Frequency")));
 	hr = pDemodFilter->put_ModulationType(&ModType);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_ModulationType");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_ModulationType")));
 	hr = pDemodFilter->put_SymbolRate((ULONG *)&SymRate);
 	if(FAILED(hr))
-		DebugLog("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_SymbolRate");
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBCTuning: failed put_SymbolRate")));
 	hr = CommitChanges(RegisteredDevices[device_index].Control);
 	return hr;
 }

@@ -9,6 +9,10 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.11 - 2011.06.21 - CrazyCat
+- Device configuration dialog implemented.
+----------
+
 v 0.2.0.10 - 2011.05.29 - CrazyCat
 - Continous 22Khz tone control, when LOF Switch=0.
 - Turbosight 6925 V2 support (DiSEqC 1.x control).

@@ -1,42 +1,151 @@
 #include "stdafx.h"
+// ConfDialog.cpp : implementation file
+//
+
 #include "ConfDialog.h"
-//#include "Dialog1.h"
 
-void __cdecl TheThread(void *ptr);
-HWND hwndDialog = NULL; // Window handle of dialog box
+// ConfDialog dialog
 
-CConfDialog::CConfDialog(HINSTANCE DllInstance, struct CONF_PARAMS *conf_params)
+ConfDialog::ConfDialog(CWnd* pParent, struct CONF_PARAMS *pConfParams)
+	: CDialog(IDD, pParent)
+	, m_pConfParams(pConfParams)
+	, m_ConfParams (*pConfParams)
 {
-	DialogParams.hInstance = DllInstance;
-	DialogParams.pConfParams = conf_params;
-//	pThread = NULL;
 }
 
-CConfDialog::~CConfDialog()
+ConfDialog::~ConfDialog()
 {
-/*	if(pThread->GetThreadPriority() == THREAD_PRIORITY_NORMAL)
-	{
-		pThread->ExitInstance();
-		pThread->Delete();
-	}*/
 }
 
-BOOLEAN CConfDialog::StartDialog()
+BOOL ConfDialog::OnInitDialog()
 {
-/*AFX_MANAGE_STATE(AfxGetStaticModuleState( ));
-	// Dialog already open and running?
-	if(pThread)
+	CDialog::OnInitDialog();
+
+	switch(m_ConfParams.VendorSpecific)
 	{
-		return FALSE;
+	case TT_BDA:
+		m_strBDAExt = "Technotrend BDA";
+		break;
+	case TH_BDA:
+		m_strBDAExt = "Twinhan BDA";
+		break;
+	case DW_BDA:
+		m_strBDAExt = "DvbWolrld BDA";
+		break;
+	case HAUP_BDA:
+		m_strBDAExt = "Hauppauge BDA";
+		break;
+	case CXT_BDA:
+		m_strBDAExt = "Conexant BDA";
+		break;
+	case TBS_BDA:
+		m_strBDAExt = "Turbosight-Conexant BDA";
+		break;
+	case TBS_NXP_BDA:
+		m_strBDAExt = "Turbosight-NXP BDA";
+		break;
+	case QBOX_BDA:
+		m_strBDAExt = "Turbosight-QBOX BDA";
+		break;
+	case TV_BDA:
+		m_strBDAExt = "TeVii BDA";
+		break;
+	case OMC_BDA:
+		m_strBDAExt = "Omicom BDA";
+		break;
+	case MS_BDA:
+		m_strBDAExt = "Microsoft BDA";
+		break;
+	case PURE_BDA:
+	default:
+		m_strBDAExt = "Generic BDA";
 	}
-	// create new thread and run Dialog
-	if(DialogParams.pConfParams)
+
+	m_strBDAExt.Append(" used");
+
+	switch(m_ConfParams.S2Pilot)
 	{
-		pThread = new CChildThread( RUNTIME_CLASS( CDialog1 ), IDD_CONFIGURATION );
-		pThread->CreateThread();
+		case PILOT_OFF:
+			m_iPilot=1;
+			break;
+		case PILOT_ON:
+			m_iPilot=2;
+			break;
+		case PILOT_NOT_SET:
+		default:
+			m_iPilot=0;
 	}
-*/
+
+	switch(m_ConfParams.S2RollOff)
+	{
+	case ROLLOFF_20:
+		m_iRollOff=1;
+		break;
+	case ROLLOFF_25:
+		m_iRollOff=2;
+		break;
+	case ROLLOFF_35:
+		m_iRollOff=3;
+		break;
+	case ROLLOFF_NOT_SET:
+	default:
+		m_iRollOff=0;
+	}
+	UpdateData(FALSE);
+
 	return TRUE;
 }
 
-//AFX_MANAGE_STATE(AfxGetStaticModuleState( ));
+void ConfDialog::DoDataExchange(CDataExchange* pDX)
+{
+	CDialog::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_STATIC_BDAEXT, m_strBDAExt);
+	DDX_CBIndex(pDX, IDC_COMBO_ROLLOFF, m_iRollOff);
+	DDX_CBIndex(pDX, IDC_COMBO_PILOT, m_iPilot);
+}
+
+BEGIN_MESSAGE_MAP(ConfDialog, CDialog)
+	ON_WM_CLOSE()
+	ON_BN_CLICKED(IDOK, &ConfDialog::OnBnClickedOk)
+END_MESSAGE_MAP()
+
+
+// ConfDialog message handlers
+
+void ConfDialog::OnClose()
+{
+	CDialog::OnClose();
+}
+
+void ConfDialog::OnBnClickedOk()
+{
+	UpdateData();
+	switch(m_iPilot)
+	{
+	case 1:
+		m_ConfParams.S2Pilot=PILOT_OFF;
+		break;
+	case 2:
+		m_ConfParams.S2Pilot=PILOT_ON;
+		break;
+	default:
+		m_ConfParams.S2Pilot=PILOT_NOT_SET;
+	}
+	switch(m_iRollOff)
+	{
+	case 1:
+		m_ConfParams.S2RollOff = ROLLOFF_20;
+		break;
+	case 2:
+		m_ConfParams.S2RollOff = ROLLOFF_25;
+		break;
+	case 3:
+		m_ConfParams.S2RollOff = ROLLOFF_35;
+		break;
+	default:
+		m_ConfParams.S2RollOff = ROLLOFF_NOT_SET;
+	}
+	*m_pConfParams = m_ConfParams; 
+
+	CDialog::OnOK();
+}

@@ -2,27 +2,31 @@
 #define CONFDIALOG_H
 
 #include "resource.h"
-//#include "ChildThread.h"
+#include "Configuration.h"
 
-struct DIALOG_PARAMS
+// CSubDialog dialog
+class ConfDialog : public CDialog
 {
-	HINSTANCE hInstance;
-	struct CONF_PARAMS *pConfParams;
-};
-
-class CConfDialog
-{
+	CONF_PARAMS *m_pConfParams;
+	CONF_PARAMS m_ConfParams;
 public:
-	CConfDialog(HINSTANCE, struct CONF_PARAMS *);
-	~CConfDialog();
+	ConfDialog(CWnd* pParent, struct CONF_PARAMS *pConfParams );   // standard constructor
+	virtual ~ConfDialog();
 
-	BOOLEAN StartDialog(void);
+// Dialog Data
+	enum { IDD = IDD_CONFIGURATION };
 
-private:
-	struct DIALOG_PARAMS DialogParams;
-	HINSTANCE hInstance;
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
-//	CChildThread* pThread;
+	DECLARE_MESSAGE_MAP()
+public:
+	virtual BOOL OnInitDialog();
+	afx_msg void OnClose();
+	afx_msg void OnBnClickedOk();
+	CString m_strBDAExt;
+	int m_iRollOff;
+	int m_iPilot;
 };
 
-#endif /* CONFDIALOG_H */
+#endif //CONFDIALOG_H

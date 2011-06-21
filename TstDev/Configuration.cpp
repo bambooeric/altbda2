@@ -2,17 +2,16 @@
 
 #include "Configuration.h"
 
+#include "ConfDialog.h"
+
 CConfiguration::CConfiguration()
 {
-//	pConfDialog = NULL;
 	message_callback = NULL;
 	conf_params.VendorSpecific = VENDOR_SPECIFIC(PURE_BDA);
 }
 
 CConfiguration::~CConfiguration()
 {
-//	if(pConfDialog)
-//		delete(pConfDialog);
 }
 
 void CConfiguration::MessageCallback(MSG_CB_PROC callback)
@@ -35,18 +34,7 @@ void CConfiguration::ReportMessage(char *text)
 
 void CConfiguration::Configure(HINSTANCE hInstance)
 {
-	int len;
-
-//	pConfDialog = new CConfDialog(hInstance, &conf_params);
-
-	ConfigurationFileExists = FALSE;
-	if(len = GetModuleFileNameA(hInstance, DLLFilePath, sizeof(DLLFilePath)))
-		if(len < sizeof(DLLFilePath) && len >3)
-		{
-			ConfigurationFileExists = ReadConfigurationFile();
-		}
-
-		if(!ConfigurationFileExists)
+	if(!ReadConfigurationFile())
 	{
 		DebugLog("BDA2: DLLMain: Failed getting configuration file");
 		if(!CreateConfigurationFile())
@@ -126,19 +114,15 @@ void CConfiguration::ConfCaps()
 
 BOOLEAN CConfiguration::ReadConfigurationFile()
 {
-	char ConfFilePath[256];
-	char ret_str[128];
-	int ret_len;
-
 	DWORD junk;
-	int fv_len = GetFileVersionInfoSizeA(DLLFilePath, &junk);
+	int fv_len = GetFileVersionInfoSizeA(AfxGetApp()->m_pszExeName, &junk);
 	if(fv_len)
 	{
 		BYTE *fv_data = new BYTE[fv_len];
 		BYTE *ptr;
 		UINT txt_len;
 
-		GetFileVersionInfoA(DLLFilePath, junk, fv_len, (void *)fv_data);
+		GetFileVersionInfoA(AfxGetApp()->m_pszExeName, junk, fv_len, (void *)fv_data);
 		if(VerQueryValueA(fv_data,"\\",(void **)&ptr,&txt_len))
 		{
 			VS_FIXEDFILEINFO *vs = (VS_FIXEDFILEINFO *)ptr;
@@ -153,108 +137,74 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 	else
 		sprintf(conf_params.ConfVer,"Unknown");
 
-	strncpy(ConfFilePath, DLLFilePath, sizeof(ConfFilePath));
-	ConfFilePath[strlen(ConfFilePath)-1] = 'g';
-	ConfFilePath[strlen(ConfFilePath)-2] = 'f';
-	ConfFilePath[strlen(ConfFilePath)-3] = 'c';
+	CString str = AfxGetApp()->GetProfileString("Common", "BDA_TYPE", "NOT_SET");
 
-	ret_len = GetPrivateProfileStringA(
-		"Dev_Bda2Driver DVBS", // section
-		"BDA_TYPE", //key
-		"NOT_SET", // default string
-		ret_str,
-		sizeof(ret_str),
-		ConfFilePath);
-
-	strupr(ret_str);
-	if ( !strcmp(ret_str,"MS") || !strcmp(ret_str,"MICROSOFT") || !strcmp(ret_str,"WIN7") )
+	if ( !str.CompareNoCase("MS") || !str.CompareNoCase("MICROSOFT") || !str.CompareNoCase("WIN7") )
 		conf_params.VendorSpecific = MS_BDA;
-	if ( !strcmp(ret_str,"TV") || !strcmp(ret_str,"TEVII") )
+	if ( !str.CompareNoCase("TV") || !str.CompareNoCase("TEVII") )
 		conf_params.VendorSpecific = TV_BDA;
 
-	ret_len = GetPrivateProfileStringA(
-		"Dev_Bda2Driver DVBS", // section
-		"S2_ROLLOFF", //key
-		"NOT_SET", // default string
-		ret_str,
-		sizeof(ret_str),
-		ConfFilePath);
+	str = AfxGetApp()->GetProfileString("Dev_Bda2Driver DVBS", "S2_ROLLOFF", "NOT_SET");
 
-	strupr(ret_str);
-	DebugLog("BDA2: ReadConfigurationFile: S2_ROLLOFF = %s (default is NOT_SET)", ret_str);
-	if(!strcmp(ret_str,"20"))
+	DebugLog("BDA2: ReadConfigurationFile: S2_ROLLOFF = %s (default is NOT_SET)", str);
+	if(!str.CompareNoCase("20"))
 		conf_params.S2RollOff = ROLLOFF_20;
 	else
-	if(!strcmp(ret_str,"25"))
+	if(!str.CompareNoCase("25"))
 		conf_params.S2RollOff = ROLLOFF_25;
 	else
-	if(!strcmp(ret_str,"35"))
+	if(!str.CompareNoCase("35"))
 		conf_params.S2RollOff = ROLLOFF_35;
 	else
 		conf_params.S2RollOff = ROLLOFF_NOT_SET; // default
 
-	ret_len = GetPrivateProfileStringA(
-		"Dev_Bda2Driver DVBS", // section
-		"S2_PILOT", //key
-		"NOT_SET", // default string
-		ret_str,
-		sizeof(ret_str),
-		ConfFilePath);
+	str = AfxGetApp()->GetProfileString("Dev_Bda2Driver DVBS", "S2_PILOT", "NOT_SET");
 
-	strupr(ret_str);
-	DebugLog("BDA2: ReadConfigurationFile: S2_PILOT = %s (default is NOT_SET)", ret_str);
-	if(!strcmp(ret_str,"ON"))
+	DebugLog("BDA2: ReadConfigurationFile: S2_PILOT = %s (default is NOT_SET)", str);
+	if(!str.CompareNoCase("ON"))
 		conf_params.S2Pilot = PILOT_ON;
 	else
-	if(!strcmp(ret_str,"OFF"))
+	if(!str.CompareNoCase("OFF"))
 		conf_params.S2Pilot = PILOT_OFF;
 	else
 		conf_params.S2Pilot = PILOT_NOT_SET; // default
 
-	// check if file exists
-	{
-		FILE *fp = fopen(ConfFilePath, "r");
-		if(!fp)
-			return FALSE;
-		fclose(fp);
-	}
-
-	return TRUE;
+	HANDLE hCfg;
+	hCfg = CreateFile(AfxGetApp()->m_pszProfileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+	CloseHandle(hCfg);
+	return hCfg != INVALID_HANDLE_VALUE;
 }
 
 
 BOOLEAN CConfiguration::CreateConfigurationFile()
 {
-	char ConfFilePath[256];
 	FILE *fp;
 
-	strncpy(ConfFilePath, DLLFilePath, sizeof(ConfFilePath));
-	ConfFilePath[strlen(ConfFilePath)-1] = 'g';
-	ConfFilePath[strlen(ConfFilePath)-2] = 'f';
-	ConfFilePath[strlen(ConfFilePath)-3] = 'c';
-	fp = fopen(ConfFilePath, "w");
+	fp = fopen(AfxGetApp()->m_pszProfileName, "w");
+	fp = fopen(AfxGetApp()->m_pszProfileName, "w");
 	if(fp)
 	{
-		fprintf(fp,"; Dev_Bda2Driver.int configuration parameters\n");
-		fprintf(fp,"[Dev_Bda2Driver DVBS]\n\n");
-		fprintf(fp,";Preffered BDA extension\n");
-		fprintf(fp,";   NOT_SET (default)\n");
-		fprintf(fp,";   MS - Microsoft Win7 BDA extension\n");
-		fprintf(fp,";   TV - TeVii BDA API\n");
-		fprintf(fp,"BDA_TYPE = NOT_SET\n\n");
-		fprintf(fp,";S2 Roll Off\n");
-		fprintf(fp,";   NOT_SET (default)\n");
-		fprintf(fp,";   20 - 0.20\n");
-		fprintf(fp,";   25 - 0.25\n");
-		fprintf(fp,";   35 - 0.35\n");
-		fprintf(fp,"S2_ROLLOFF = NOT_SET\n\n");
-		fprintf(fp,";S2 Pilot\n");
-		fprintf(fp,";   NOT_SET (default)\n");
-		fprintf(fp,";   ON\n");
-		fprintf(fp,";   OFF\n");
-		fprintf(fp,"S2_PILOT = NOT_SET\n\n");
-		fprintf(fp,"[Dev_Bda2Driver DVBT]\n");
-		fprintf(fp,"[Dev_Bda2Driver DVBC]\n");
+		fputs("; Dev_Bda2Driver.int configuration parameters\n\n",fp);
+		fputs("[Common]\n\n",fp);
+		fputs(";Preffered BDA extension\n",fp);
+		fputs(";   NOT_SET (default)\n",fp);
+		fputs(";   MS - Microsoft Win7 BDA extension\n",fp);
+		fputs(";   TV - TeVii BDA API\n",fp);
+		fputs("BDA_TYPE = NOT_SET\n\n",fp);
+		fputs("[Dev_Bda2Driver DVBS]\n\n",fp);
+		fputs(";S2 Roll Off\n",fp);
+		fputs(";   NOT_SET (default)\n",fp);
+		fputs(";   20 - 0.20\n",fp);
+		fputs(";   25 - 0.25\n",fp);
+		fputs(";   35 - 0.35\n",fp);
+		fputs("S2_ROLLOFF = NOT_SET\n\n",fp);
+		fputs(";S2 Pilot\n",fp);
+		fputs(";   NOT_SET (default)\n",fp);
+		fputs(";   ON\n",fp);
+		fputs(";   OFF\n",fp);
+		fputs("S2_PILOT = NOT_SET\n\n",fp);
+		fputs("[Dev_Bda2Driver DVBT]\n\n",fp);
+		fputs("[Dev_Bda2Driver DVBC]\n\n",fp);
 		fclose(fp);
 		return TRUE;
 	}
@@ -263,7 +213,40 @@ BOOLEAN CConfiguration::CreateConfigurationFile()
 
 BOOLEAN CConfiguration::DoConfigurationDialog()
 {
-/*	if(pConfDialog)
-		return pConfDialog->StartDialog();*/
+	ConfDialog CfgDlg(CWnd::FindWindow("TFormDvbMain",NULL),&conf_params);
+	if (CfgDlg.DoModal()==IDOK)
+	{
+		char *ConfStr;
+		switch(conf_params.S2Pilot)
+		{
+		case PILOT_ON:
+			ConfStr="ON";
+			break;
+		case PILOT_OFF:
+			ConfStr="OFF";
+			break;
+		case PILOT_NOT_SET:
+		default:
+			ConfStr="NOT_SET";
+		}
+		AfxGetApp()->WriteProfileString("Dev_Bda2Driver DVBS", "S2_PILOT", ConfStr);
+
+		switch(conf_params.S2RollOff)
+		{
+		case ROLLOFF_20:
+			ConfStr="20";
+			break;
+		case ROLLOFF_25:
+			ConfStr="25";
+			break;
+		case ROLLOFF_35:
+			ConfStr="35";
+			break;
+		case ROLLOFF_NOT_SET:
+		default:
+			ConfStr="NOT_SET";
+		}
+		AfxGetApp()->WriteProfileString("Dev_Bda2Driver DVBS", "S2_ROLLOFF", ConfStr);
+	}
 	return TRUE;
 }

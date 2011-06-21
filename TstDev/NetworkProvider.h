@@ -21,21 +21,6 @@
 
 #include <initguid.h>
 
-static void DebugLog( const char *format, ... )
-{
-	char buffer[1024] = { 0 };
-
-	va_list args;
-	va_start( args, format );
-
-	vsprintf_s( buffer, _vscprintf( format, args )+1, format, args );
-
-	va_end( format );
-
-	OutputDebugStringA( buffer );
-	OutputDebugStringA("\n");
-}
-
 // {88600304-7567-49fc-B601-5B7062CB40ED}
 DEFINE_GUID(CLSID_DVBNetworkProviderFilter, 
 0x88600304, 0x7567, 0x49fc, 0xb6, 0x1, 0x5b, 0x70, 0x62, 0xcb, 0x40, 0xed);

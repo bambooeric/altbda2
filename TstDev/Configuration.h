@@ -5,8 +5,6 @@
 #include "NetworkProvider.h"
 #include "Dll.h"
 
-//#include "ConfDialog.h"
-
 #include <stdio.h>
 #include <WinVer.h>
 
@@ -19,7 +17,7 @@ enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1, ROLLOFF_NOT_DEFINED = 0,
 enum S2_PILOT { PILOT_NOT_SET = -1, PILOT_NOT_DEFINED = 0x0,
 	PILOT_OFF = 0x1, PILOT_ON };
 
-struct CONF_PARAMS
+typedef struct CONF_PARAMS
 {
 	char ConfVer[32];
 	int ConfDiSEqC; 
@@ -27,7 +25,7 @@ struct CONF_PARAMS
 	int VendorSpecific;
 	int S2RollOff;
 	int S2Pilot;
-};
+} CONF_PARAMS;
 
 class CConfiguration
 {
@@ -44,14 +42,10 @@ public:
 	BOOLEAN CreateConfigurationFile();
 
 	BOOLEAN DoConfigurationDialog();
-
-	char DLLFilePath[256];
-	BOOLEAN ConfigurationFileExists;
-	struct CONF_PARAMS conf_params;
+	CONF_PARAMS conf_params;
 
 private:
 	MSG_CB_PROC message_callback;
-//	CConfDialog *pConfDialog;
 };
 
 #endif /* CONFIGURATION_H */
