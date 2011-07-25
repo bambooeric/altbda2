@@ -50,4 +50,6 @@
 
 void DebugLog( const char *format, ... );
 
+#define SG_USE
+
 #endif _stdafx

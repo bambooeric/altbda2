@@ -242,9 +242,10 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 		};
 		switch(d->modulation)
 		{
-			case MOD_AUTO:	ModType = BDA_MOD_NOT_DEFINED; break;
+			case MOD_AUTO:	ModType = BDA_MOD_NOT_SET; break;
 			case MOD_QPSK:	ModType = BDA_MOD_QPSK; break;
 			case MOD_8PSK:	ModType = conf_params.ConfMod8PSK; break;
+			case MOD_VSB_8: ModType = BDA_MOD_NBC_QPSK; break;
 			default: ModType = BDA_MOD_QPSK;
 		};
 

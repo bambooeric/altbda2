@@ -9,6 +9,11 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.12 - 2011.07.25 - CrazyCat
+- Fix modulation autodetect.
+- 8VSB modulation for satellite devices used as NBC_QPSK
+----------
+
 v 0.2.0.11 - 2011.06.21 - CrazyCat
 - Device configuration dialog implemented.
 ----------
