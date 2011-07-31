@@ -153,10 +153,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 		{
 			switch(conf_params.VendorSpecific)
 			{
-			case CXT_BDA:
-				if FAILED(BdaGraph.DVBS_Conexant_LNBPower(d->polarity == LNBPOWER_ON))
-					return AltxDVB_ERR;
-				break;
 			case TBS_BDA:
 				if FAILED(BdaGraph.DVBS_Turbosight_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
@@ -468,9 +464,11 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 	case HAUP_BDA:
 		if(BdaGraph.DVBS_Hauppauge_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
+		break;
 	case CXT_BDA:
 		if (BdaGraph.DVBS_Conexant_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
+		break;
 	case TBS_BDA:
 		if (BdaGraph.DVBS_Turbosight_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
