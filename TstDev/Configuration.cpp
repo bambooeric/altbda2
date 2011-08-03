@@ -169,6 +169,10 @@ BOOLEAN CConfiguration::ReadConfigurationFile()
 	else
 		conf_params.S2Pilot = PILOT_NOT_SET; // default
 
+	conf_params.RelockTimeout = AfxGetApp()->GetProfileInt("Common","RelockTime",0);
+	if (conf_params.RelockTimeout > MAX_TIMEOUT) conf_params.RelockTimeout = MAX_TIMEOUT;
+	DebugLog("BDA2: ReadConfigurationFile: RelockTime = %i sec (default is 0, disabled)", conf_params.RelockTimeout);
+
 	HANDLE hCfg;
 	hCfg = CreateFile(AfxGetApp()->m_pszProfileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 	CloseHandle(hCfg);
@@ -191,6 +195,8 @@ BOOLEAN CConfiguration::CreateConfigurationFile()
 		fputs(";   MS - Microsoft Win7 BDA extension\n",fp);
 		fputs(";   TV - TeVii BDA API\n",fp);
 		fputs("BDA_TYPE = NOT_SET\n\n",fp);
+		fprintf(fp,";Relock after timeout in sec (1-%d)\n",MAX_TIMEOUT);
+		fputs("RelockTime = 0\n\n",fp);
 		fputs("[Dev_Bda2Driver DVBS]\n\n",fp);
 		fputs(";S2 Roll Off\n",fp);
 		fputs(";   NOT_SET (default)\n",fp);
@@ -247,6 +253,8 @@ BOOLEAN CConfiguration::DoConfigurationDialog()
 			ConfStr="NOT_SET";
 		}
 		AfxGetApp()->WriteProfileString("Dev_Bda2Driver DVBS", "S2_ROLLOFF", ConfStr);
+
+		AfxGetApp()->WriteProfileInt("Common","RelockTime",conf_params.RelockTimeout);
 	}
 	return TRUE;
 }

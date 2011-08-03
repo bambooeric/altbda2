@@ -135,6 +135,9 @@ int CDvbDeviceControl::StreamCallback(STR_CB_PROC d)
 	return AltxDVB_OK; // 0x0 OK, non zero quits AltDVB
 }
 
+static clock_t lock_time=0; 
+static struct TUNE_DATA tune_data;
+
 int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 {
 	SpectralInversion SpectrInv;
@@ -197,6 +200,9 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 			return AltxDVB_OK;
 		}
 
+		lock_time = clock();
+		tune_data = *d;
+
 		/* not first tuning */
 		switch(d->inversion)
 		{
@@ -241,6 +247,8 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 			case MOD_AUTO:	ModType = BDA_MOD_NOT_SET; break;
 			case MOD_QPSK:	ModType = BDA_MOD_QPSK; break;
 			case MOD_8PSK:	ModType = conf_params.ConfMod8PSK; break;
+			case MOD_QAM_16: ModType = BDA_MOD_16APSK; break;
+			case MOD_QAM_32: ModType = BDA_MOD_32APSK; break;
 			case MOD_VSB_8: ModType = BDA_MOD_NBC_QPSK; break;
 			default: ModType = BDA_MOD_QPSK;
 		};
@@ -431,8 +439,25 @@ int CDvbDeviceControl::SignalStatistics(struct SIGNAL_STATISTICS_DATA *d)
 
 	if(SUCCEEDED(hr))
 	{
+		if (conf_params.RelockTimeout && lock_time && (!locked || !quality))
+		{
+			clock_t curr_time = clock();			
+			if ((curr_time-lock_time) >= (conf_params.RelockTimeout*CLOCKS_PER_SEC))
+			{
+				curr_time = curr_time-lock_time;
+				DebugLog( "Relock attempt after %d sec - %s", curr_time/CLOCKS_PER_SEC,
+							  Tune(&tune_data) ? "failed !" : "success." );
+			}
+			else
+				DebugLog("Wait signal lock %d sec", (curr_time-lock_time)/CLOCKS_PER_SEC);
+		}
+		else
+			lock_time = clock();
+
 		d->flags = (locked? 0x10 : 0x00) | (present? 0x0F : 0x00);
+		d->strength = present ? (int)strength : 0;
 		d->strength = (int)strength;
+		d->quality = locked ? (int)quality : 0;
 		d->quality = (int)quality;
 		return AltxDVB_OK;
 	}
@@ -447,8 +472,8 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 	DebugLog(txt);
 	for(int i=0;i<d->len;++i)
 	{
-	sprintf(txt,"DiSEqC %2.2x",d->DiSEqC_Command[i]);
-	DebugLog(txt);
+		sprintf(txt,"DiSEqC %2.2x",d->DiSEqC_Command[i]);
+		DebugLog(txt);
 	}
 	switch(conf_params.VendorSpecific)
 	{

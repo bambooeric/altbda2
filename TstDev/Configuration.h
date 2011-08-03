@@ -17,6 +17,8 @@ enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1, ROLLOFF_NOT_DEFINED = 0,
 enum S2_PILOT { PILOT_NOT_SET = -1, PILOT_NOT_DEFINED = 0x0,
 	PILOT_OFF = 0x1, PILOT_ON };
 
+#define MAX_TIMEOUT 10
+
 typedef struct CONF_PARAMS
 {
 	char ConfVer[32];
@@ -25,6 +27,7 @@ typedef struct CONF_PARAMS
 	int VendorSpecific;
 	int S2RollOff;
 	int S2Pilot;
+	clock_t RelockTimeout;
 } CONF_PARAMS;
 
 class CConfiguration

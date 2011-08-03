@@ -27,6 +27,7 @@ public:
 	CString m_strBDAExt;
 	int m_iRollOff;
 	int m_iPilot;
+	CComboBox m_ctrlRelockTime;
 };
 
 #endif //CONFDIALOG_H

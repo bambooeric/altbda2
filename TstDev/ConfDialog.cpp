@@ -91,6 +91,16 @@ BOOL ConfDialog::OnInitDialog()
 	default:
 		m_iRollOff=0;
 	}
+
+	m_ctrlRelockTime.InsertString(0,"OFF");
+	for (int i=1; i<=MAX_TIMEOUT; i++)
+	{
+		CString str;
+		str.Format("%i",i);
+		m_ctrlRelockTime.InsertString(i,str);
+	}
+	m_ctrlRelockTime.SetCurSel(m_ConfParams.RelockTimeout);
+
 	UpdateData(FALSE);
 
 	return TRUE;
@@ -102,6 +112,7 @@ void ConfDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_STATIC_BDAEXT, m_strBDAExt);
 	DDX_CBIndex(pDX, IDC_COMBO_ROLLOFF, m_iRollOff);
 	DDX_CBIndex(pDX, IDC_COMBO_PILOT, m_iPilot);
+	DDX_Control(pDX, IDC_COMBO_RELOCKTIME, m_ctrlRelockTime);
 }
 
 BEGIN_MESSAGE_MAP(ConfDialog, CDialog)
@@ -145,6 +156,8 @@ void ConfDialog::OnBnClickedOk()
 	default:
 		m_ConfParams.S2RollOff = ROLLOFF_NOT_SET;
 	}
+	m_ConfParams.RelockTimeout = m_ctrlRelockTime.GetCurSel();
+
 	*m_pConfParams = m_ConfParams; 
 
 	CDialog::OnOK();
