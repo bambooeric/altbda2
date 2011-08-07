@@ -4,7 +4,7 @@
 #include "cxtbda.h"
 #include "qboxbda.h"
 #include "omcbda.h"
-#include <TeVii.h>
+#include "TeViiDLL.h"
 
 #define Z(a) memset(&a, 0, sizeof(a))
 
@@ -25,11 +25,13 @@ CBdaGraph::CBdaGraph()
 	pCallbackInstance = NULL;
 	pNetworkProviderInstance = NULL;
 	hTT = hDW =  INVALID_HANDLE_VALUE;
+	bTVDLL = !LoadTeViiDLL();
 	iTVIdx = -1;
 }
 
 CBdaGraph::~CBdaGraph()
 {
+	if (bTVDLL) UnloadTeViiDLL();
 }
 
 HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
@@ -710,15 +712,15 @@ ReportMessage(text);
 		}
 	}
 
-	if ( ((*VendorSpecific != TBS_BDA) && (*VendorSpecific != DW_BDA)) || (PrefBDA == VENDOR_SPECIFIC(TV_BDA)) )
+	if ( bTVDLL && ( (*VendorSpecific != TBS_BDA && *VendorSpecific != DW_BDA) || PrefBDA == VENDOR_SPECIFIC(TV_BDA) ) )
 	{
 		char receiver_path[MAX_PATH];
 		hr = GetTunerPath(selected_device_enum, receiver_path);
-		int m = FindDevices();
+		int m = TeVii_FindDevices();
 		for (int i=0; i<m; i++)
-			if ( (!strcmp(receiver_name,GetDeviceName(i))) && (!strcmp(receiver_path,GetDevicePath(i))) )
+			if ( (!strcmp(receiver_name,TeVii_GetDeviceName(i))) && (!strcmp(receiver_path,TeVii_GetDevicePath(i))) )
 			{
-				if (OpenDevice(i,NULL,NULL))
+				if (TeVii_OpenDevice(i,NULL,NULL))
 				{
 					DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
 					*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
@@ -747,7 +749,7 @@ ReportMessage(text);
 						bdaapiClose(hTT);
 				if (*VendorSpecific == VENDOR_SPECIFIC(TV_BDA))
 					if (iTVIdx!=-1)
-						CloseDevice(iTVIdx);
+						TeVii_CloseDevice(iTVIdx);
 				*VendorSpecific = VENDOR_SPECIFIC(MS_BDA);
 			}
 		}
@@ -1024,7 +1026,7 @@ void CBdaGraph::CloseGraph()
 		bdaapiClose(hTT);
 
 	if (iTVIdx!=-1)
-		CloseDevice(iTVIdx);
+		TeVii_CloseDevice(iTVIdx);
 
 	if(m_pMediaControl)
 	{
@@ -1390,7 +1392,7 @@ HRESULT CBdaGraph::DVBS_TeVii_Tune(
 		}
 	}
 
-	if (TuneTransponder(iTVIdx, Frequency, SymRate*1000, Frequency > SwitchF ? HighBandF:LowBandF, TVPol,
+	if (TeVii_TuneTransponder(iTVIdx, Frequency, SymRate*1000, Frequency > SwitchF ? HighBandF:LowBandF, TVPol,
 		Frequency > SwitchF, TVMod, TVFec))
 		return S_OK;
 	else
@@ -1668,7 +1670,7 @@ HRESULT CBdaGraph::GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked,
 
 	DWORD Strength, Quality;
 	BOOL Lock;
-	if (GetSignalStatus(iTVIdx, &Lock, &Strength, &Quality))
+	if (TeVii_GetSignalStatus(iTVIdx, &Lock, &Strength, &Quality))
 	{
 		*pLocked=Lock;
 		*pStrength=Strength;
@@ -1854,7 +1856,7 @@ HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	if (iTVIdx<0)
 		return E_FAIL;
 
-	if (SendDiSEqC(iTVIdx, DiSEqC_Command, len, 0, FALSE))
+	if (TeVii_SendDiSEqC(iTVIdx, DiSEqC_Command, len, 0, FALSE))
 	{
 		ReportMessage("BDA2: DVBS_TeVii_DiSEqC: success");
 		return S_OK;

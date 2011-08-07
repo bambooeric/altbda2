@@ -215,6 +215,7 @@ private:
 
 	MSG_CB_PROC message_callback;
 	HANDLE hTT, hDW;
+	BOOL bTVDLL;
 	int iTVIdx;
 
 	//THBDA Ioctl functions

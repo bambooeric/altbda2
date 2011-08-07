@@ -46,7 +46,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
+				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS;TTBDADRVAPI_STATIC_LIBRARY"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmiids.lib strmbasd.lib ksproxy.lib winmm.lib version.lib winstrm.lib ntdll.lib ttBdaDrvApi_Lib.lib libci.lib TeVii.lib"
+				AdditionalDependencies="strmiids.lib strmbasd.lib ksproxy.lib winmm.lib version.lib winstrm.lib ntdll.lib ttBdaDrvApi_Lib.lib libci.lib"
 				OutputFile="$(OutDir)\Dev_Bda2Driver.int"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Debug;C:\WinDDK\lib\win7\i386;H:\src\TechnoTrend\BDA-SDK\Lib;H:\src\TeVii"
@@ -103,7 +103,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to AltDVB\Devices"
-				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;copy /Y $(InputDir)\ReadMe.txt C:\DVBSupport\AltDvb\Devices"
+				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;copy /Y $(InputDir)\ReadMe.txt C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -135,7 +135,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include;H:\src\TeVii"
+				AdditionalIncludeDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses;H:\src\TechnoTrend\BDA-SDK\Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TSTDEV_EXPORTS;TTBDADRVAPI_STATIC_LIBRARY"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -155,7 +155,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmiids.lib strmbase.lib ksproxy.lib winmm.lib version.lib winstrm.lib ntdll.lib ttBdaDrvApi_Lib.lib libci.lib TeVii.lib"
+				AdditionalDependencies="strmiids.lib strmbase.lib ksproxy.lib winmm.lib version.lib winstrm.lib ntdll.lib ttBdaDrvApi_Lib.lib libci.lib"
 				OutputFile="$(OutDir)\Dev_Bda2Driver.int"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(WindowsSdkDir)\Samples\multimedia\directshow\baseclasses\Release;C:\WinDDK\lib\win7\i386;H:\src\TechnoTrend\BDA-SDK\Lib;H:\src\TeVii"
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to AltDVB\Devices"
-				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;copy /Y $(InputDir)\ReadMe.txt C:\DVBSupport\AltDvb\Devices"
+				CommandLine="copy /Y $(TargetPath) C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;copy /Y $(InputDir)\ReadMe.txt C:\DVBSupport\AltDvb\Devices&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -272,6 +272,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\TeViiDLL.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\THIOCtrl.cpp"
 				>
 			</File>
@@ -335,6 +339,10 @@
 			</File>
 			<File
 				RelativePath=".\tbsbda.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TeViiDLL.h"
 				>
 			</File>
 			<File

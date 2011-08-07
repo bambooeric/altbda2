@@ -2,8 +2,8 @@
 
 #include "DvbDeviceControl.h"
 
-#define TEVII_FULL
-#define TT_FULL
+//#define TEVII_FULL
+//#define TT_FULL
 
 CDvbDeviceControl::CDvbDeviceControl(HMODULE hModule)
 {
