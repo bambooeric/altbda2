@@ -9,6 +9,10 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.14 - 2011.11.01 - CrazyCat
+- TBS QBox detection fix. QBox BDA-extension preffered except Prof 7500.
+----------
+
 v 0.2.0.13 - 2011.08.03 - CrazyCat
 - New option - Relock after timeout. Useful for motorized dishes or periodical signal drops.
 ----------

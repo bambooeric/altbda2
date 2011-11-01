@@ -653,21 +653,6 @@ ReportMessage(text);
 	}
 
 	// let's look if Tuner exposes proprietary interfaces
-	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet);
-	if (hr==S_OK)
-	{
-		DWORD supported;
-		// Turbosight QBOX
-		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
-			KSPROPERTY_CTRL_MOTOR, &supported);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
-		{
-			DebugLog("BDA2: BuildGraph: found Turbosight-QBOX DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
-		}
-	}
-
-	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
 	if (hr==S_OK)
 	{
@@ -709,6 +694,21 @@ ReportMessage(text);
 		{
 			DebugLog("BDA2: BuildGraph: found Twinhan DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TH_BDA);
+		}
+	}
+
+	// let's look if Tuner filter exposes proprietary interfaces
+	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet);
+	if (hr==S_OK)
+	{
+		DWORD supported;
+		// Turbosight QBOX
+		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
+			KSPROPERTY_CTRL_MOTOR, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && strcmp(receiver_name,"Prof 7500 DVBS Tuner"))
+		{
+			DebugLog("BDA2: BuildGraph: found Turbosight-QBOX DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
 		}
 	}
 
