@@ -7,6 +7,9 @@ const GUID KSPROPSETID_BdaTunerExtensionProperties =
 const GUID KSPROPSETID_BdaTunerExtensionPropertiesHaup  =
 {0xfaa8f3e5, 0x31d4, 0x4e41, {0x88, 0xef, 0x00, 0xa0, 0xc9, 0xf2, 0x1f, 0xc7}};
 
+DEFINE_GUIDSTRUCT("03CBDCB9-36DC-4072-AC42-2F94F4ECA05E", KSPROPSETID_BdaTunerExtensionPropertiesBst);
+#define KSPROPSETID_BdaTunerExtensionPropertiesBst DEFINE_GUIDNAMED(KSPROPSETID_BdaTunerExtensionPropertiesBst)
+
 typedef enum
 {
     KSPROPERTY_BDA_DISEQC_MESSAGE = 0,  //Custom property for Diseqc messaging

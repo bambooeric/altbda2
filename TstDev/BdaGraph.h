@@ -3,6 +3,8 @@
 
 #pragma warning( disable : 4995 4996 ) // no depreciated warnings
 
+#define Z(a) memset(&a, 0, sizeof(a))
+
 #include "CallbackFilter.h"
 #include "NetworkProvider.h"
 #include "Configuration.h"
@@ -14,8 +16,6 @@
 #include "dwBdaApi.h"
 #include <ttBdaDrvApi.h>
 #include "THIOCtrl.h"
-
-
 // defaults for tune request
 #define DEFAULT_FREQUENCY_C		394000L
 #define DEFAULT_FREQUENCY_S		11766000L
@@ -168,6 +168,7 @@ public:
 	HRESULT DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE repeat);
 	HRESULT DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Bestunar_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Conexant_LNBPower (BOOL bPower);	
 	HRESULT DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Turbosight_LNBPower (BOOL bPower);
@@ -179,8 +180,9 @@ public:
 	HRESULT DVBS_Twinhan_LNBPower(BOOL bPower);
 	HRESULT DVBS_Twinhan_LNBSource (BYTE Port, BYTE ToneBurst);
 	HRESULT DVBS_DvbWorld_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
-	HRESULT DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Omicom_Set22Khz(BOOL b22Khz);
+	HRESULT DVBS_Omicom_ToneBurst(BOOL bToneBurst);
+	HRESULT DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command);	
 
 	void SetStreamCallbackProcedure(STR_CB_PROC);
 

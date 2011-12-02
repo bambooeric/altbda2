@@ -272,10 +272,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\TeViiDLL.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\THIOCtrl.cpp"
 				>
 			</File>
@@ -342,11 +338,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\TeViiDLL.h"
+				RelativePath=".\THIOCtrl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\THIOCtrl.h"
+				RelativePath=".\tvbda.h"
 				>
 			</File>
 		</Filter>

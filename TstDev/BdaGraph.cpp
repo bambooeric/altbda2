@@ -4,7 +4,7 @@
 #include "cxtbda.h"
 #include "qboxbda.h"
 #include "omcbda.h"
-#include "TeViiDLL.h"
+#include "tvbda.h"
 
 #define Z(a) memset(&a, 0, sizeof(a))
 
@@ -25,13 +25,10 @@ CBdaGraph::CBdaGraph()
 	pCallbackInstance = NULL;
 	pNetworkProviderInstance = NULL;
 	hTT = hDW =  INVALID_HANDLE_VALUE;
-	bTVDLL = !LoadTeViiDLL();
-	iTVIdx = -1;
 }
 
 CBdaGraph::~CBdaGraph()
 {
-	if (bTVDLL) UnloadTeViiDLL();
 }
 
 HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
@@ -631,27 +628,6 @@ ReportMessage(text);
 		}
 	}
 
-	m_pTunerControl = NULL;
-	hr = m_pTunerDevice->QueryInterface(IID_IKsControl,(void**)&m_pTunerControl);
-	if (hr==S_OK)
-	{
-		KSPROPERTY prop;
-		ULONG bytesReturned = 0;
-		DWORD supported = 0;
-		Z(prop);
-
-		prop.Set = KSPROPSETID_OMCDiSEqCProperties;
-		prop.Id = KSPROPERTY_OMC_DISEQC_WRITE;
-		prop.Flags = KSPROPERTY_TYPE_BASICSUPPORT;
-		hr = m_pTunerControl->KsProperty(&prop,sizeof(prop),
-			(void*)&supported, sizeof(supported),&bytesReturned);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
-		{
-			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
-		}
-	}
-
 	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
 	if (hr==S_OK)
@@ -659,6 +635,15 @@ ReportMessage(text);
 		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");
 		ReportMessage(text);
+		// Bestunar
+		DebugLog("BDA2: BuildGraph: checking for Bestunar DiSEqC interface");
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesBst,
+			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
+		if(SUCCEEDED(hr) && supported)
+		{
+			DebugLog("BDA2: BuildGraph: found Bestunar DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(BST_BDA);
+		}
 		// Hauppauge
 		DebugLog("BDA2: BuildGraph: checking for Hauppauge DiSEqC interface");
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
@@ -695,13 +680,33 @@ ReportMessage(text);
 			DebugLog("BDA2: BuildGraph: found Twinhan DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TH_BDA);
 		}
+		// TeVii
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS460,
+			KSPROPERTY_BDA_DISEQC, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+		{
+			iTVIdx=1;
+			DebugLog("BDA2: BuildGraph: found TeVii S460 DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
+		}
+		else
+		{
+			hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS420,
+				KSPROPERTY_BDA_DISEQC, &supported);
+			if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+			{
+				iTVIdx=0;
+				DebugLog("BDA2: BuildGraph: found TeVii S420 DiSEqC interface");
+				*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
+			}
+		}
 	}
 
 	// let's look if Tuner filter exposes proprietary interfaces
 	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet);
 	if (hr==S_OK)
 	{
-		DWORD supported;
+		DWORD supported;		
 		// Turbosight QBOX
 		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPERTYSET_QBOXControl,
 			KSPROPERTY_CTRL_MOTOR, &supported);
@@ -710,26 +715,14 @@ ReportMessage(text);
 			DebugLog("BDA2: BuildGraph: found Turbosight-QBOX DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(QBOX_BDA);
 		}
-	}
-
-	if ( bTVDLL && ( (*VendorSpecific != TBS_BDA && *VendorSpecific != DW_BDA) || PrefBDA == VENDOR_SPECIFIC(TV_BDA) ) )
-	{
-		char receiver_path[MAX_PATH];
-		hr = GetTunerPath(selected_device_enum, receiver_path);
-		int m = TeVii_FindDevices();
-		for (int i=0; i<m; i++)
-			if ( (!strcmp(receiver_name,TeVii_GetDeviceName(i))) && (!strcmp(receiver_path,TeVii_GetDevicePath(i))) )
-			{
-				if (TeVii_OpenDevice(i,NULL,NULL))
-				{
-					DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
-					*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
-					iTVIdx=i;
-				}
-				else
-					DebugLog("BDA2: BuildGraph: Can't open TeVii device interface");
-				break;
-			}
+		// Omicom
+		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPSETID_OmcDiSEqCProperties,
+			KSPROPERTY_OMC_DISEQC_WRITE, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
+		{
+			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
+		}
 	}
 
 	if (m_pKsTunerPropSet)
@@ -747,9 +740,6 @@ ReportMessage(text);
 				if (*VendorSpecific == VENDOR_SPECIFIC(TT_BDA))
 					if (INVALID_HANDLE_VALUE!=hTT)
 						bdaapiClose(hTT);
-				if (*VendorSpecific == VENDOR_SPECIFIC(TV_BDA))
-					if (iTVIdx!=-1)
-						TeVii_CloseDevice(iTVIdx);
 				*VendorSpecific = VENDOR_SPECIFIC(MS_BDA);
 			}
 		}
@@ -1025,9 +1015,6 @@ void CBdaGraph::CloseGraph()
 	if (hTT!=INVALID_HANDLE_VALUE)
 		bdaapiClose(hTT);
 
-	if (iTVIdx!=-1)
-		TeVii_CloseDevice(iTVIdx);
-
 	if(m_pMediaControl)
 	{
 		m_pMediaControl->Stop();
@@ -1294,111 +1281,6 @@ HRESULT CBdaGraph::DVBS_TT_Tune(
 	return E_FAIL;
 }
 
-HRESULT CBdaGraph::DVBS_TeVii_Tune(
-			ULONG LowBandF,
-			ULONG HighBandF,
-			ULONG SwitchF,
-			ULONG Frequency,
-			SpectralInversion SpectrInv,
-			ModulationType ModType,
-			LONG SymRate,
-			Polarisation Pol,
-			BinaryConvolutionCodeRate Fec
-			)
-{
-	if (iTVIdx<0)
-		return E_FAIL;
-
-	TPolarization TVPol;
-	switch(Pol)
-	{
-	case BDA_POLARISATION_LINEAR_H:
-	case BDA_POLARISATION_CIRCULAR_L:
-		TVPol=TPol_Horizontal;break;
-	case BDA_POLARISATION_LINEAR_V:
-	case BDA_POLARISATION_CIRCULAR_R:
-		TVPol=TPol_Vertical;break;
-	default:
-		TVPol=TPol_None;
-	}
-
-	TMOD TVMod;
-	switch (ModType)
-	{
-	case BDA_MOD_QPSK:
-		TVMod=TMOD_QPSK;break;
-	case BDA_MOD_BPSK:
-		TVMod=TMOD_BPSK;break;
-	case BDA_MOD_16QAM:
-		TVMod=TMOD_16QAM;break;
-	case BDA_MOD_32QAM:
-		TVMod=TMOD_32QAM;break;
-	case BDA_MOD_64QAM:
-		TVMod=TMOD_64QAM;break;
-	case BDA_MOD_128QAM:
-		TVMod=TMOD_128QAM;break;
-	case BDA_MOD_256QAM:
-		TVMod=TMOD_256QAM;break;
-	case BDA_MOD_8VSB:
-		TVMod=TMOD_8VSB;break;
-	case BDA_MOD_NBC_QPSK:
-		TVMod=TMOD_DVBS2_QPSK;break;
-	case BDA_MOD_NBC_8PSK:
-	case BDA_MOD_8PSK:
-		TVMod=TMOD_DVBS2_8PSK;break;
-	case BDA_MOD_16APSK:
-		TVMod=TMOD_DVBS2_16PSK;break;
-	case BDA_MOD_32APSK:
-		TVMod=TMOD_DVBS2_32PSK;break;
-	default:
-		TVMod=TMOD_AUTO;
-	}
-
-	TFEC TVFec;
-	switch(Fec)
-	{
-	case BDA_BCC_RATE_1_2:
-		TVFec=TFEC_1_2;
-	case BDA_BCC_RATE_2_3:
-		TVFec=TFEC_2_3;
-	case BDA_BCC_RATE_3_4:
-		TVFec=TFEC_3_4;
-	case BDA_BCC_RATE_4_5:
-		TVFec=TFEC_4_5;
-	case BDA_BCC_RATE_5_6:
-		TVFec=TFEC_5_6;
-	case BDA_BCC_RATE_6_7:
-		TVFec=TFEC_6_7;
-	case BDA_BCC_RATE_7_8:
-		TVFec=TFEC_7_8;
-	case BDA_BCC_RATE_8_9:
-		TVFec=TFEC_8_9;
-	case BDA_BCC_RATE_9_10:
-		TVFec=TFEC_9_10;
-	default:
-		TVFec=TFEC_AUTO;
-	}
-
-	if (!SwitchF)
-	{
-		if ((!LowBandF) && HighBandF)
-		{
-			SwitchF = Frequency-1000;
-			LowBandF = HighBandF;
-		} else if (LowBandF && (!HighBandF))
-		{
-			SwitchF = Frequency+1000;
-			HighBandF = LowBandF;
-		}
-	}
-
-	if (TeVii_TuneTransponder(iTVIdx, Frequency, SymRate*1000, Frequency > SwitchF ? HighBandF:LowBandF, TVPol,
-		Frequency > SwitchF, TVMod, TVFec))
-		return S_OK;
-	else
-		return E_FAIL;
-}
-
 HRESULT CBdaGraph::DVBS_DvbWorld_Tune(
 			ULONG LowBandF,
 			ULONG HighBandF,
@@ -1663,25 +1545,6 @@ HRESULT CBdaGraph::GetTechnotrendSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pL
 	return S_OK;
 }
 
-HRESULT CBdaGraph::GetTeViiSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality)
-{
-	if (iTVIdx<0)
-		return E_FAIL;
-
-	DWORD Strength, Quality;
-	BOOL Lock;
-	if (TeVii_GetSignalStatus(iTVIdx, &Lock, &Strength, &Quality))
-	{
-		*pLocked=Lock;
-		*pStrength=Strength;
-		*pQuality=Quality;
-		*pPresent=TRUE;
-		return S_OK;
-	}
-	else
-		return E_FAIL;
-}
-
 char* ErrorMessageTTBDA ( TYPE_RET_VAL err )
 {
 	char *err_str;
@@ -1853,19 +1716,23 @@ HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
 
-	if (iTVIdx<0)
-		return E_FAIL;
+	HRESULT hr = S_OK;
 
-	if (TeVii_SendDiSEqC(iTVIdx, DiSEqC_Command, len, 0, FALSE))
-	{
+	PRIVATE_DISEQC diseqc_msg;
+	CopyMemory(diseqc_msg.message,DiSEqC_Command,len);
+	diseqc_msg.length=len;
+	diseqc_msg.b_last_message = TRUE;
+	diseqc_msg.power = 0;
+	hr = m_pKsTunerPropSet->Set(iTVIdx ? KSPROPSETID_BdaTunerExtensionPropertiesTeViiS460 :
+										KSPROPSETID_BdaTunerExtensionPropertiesTeViiS420,
+										KSPROPERTY_BDA_DISEQC,
+										&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg));
+	if(SUCCEEDED(hr))
 		ReportMessage("BDA2: DVBS_TeVii_DiSEqC: success");
-		return S_OK;
-	}
 	else
-	{
 		ReportMessage("BDA2: DVBS_TeVii_DiSEqC: failed");
-		return E_FAIL;
-	}
+
+	return hr;
 }
 
 HRESULT CBdaGraph::DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command)

@@ -9,6 +9,11 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.15 - 2011.12.01 - CrazyCat
+- Bestunar/DVBSky BDA-extension support (DiSEqC 1.x control).
+- Improved Omicom, TeVii BDA-extension support.
+----------
+
 v 0.2.0.14 - 2011.11.01 - CrazyCat
 - TBS QBox detection fix. QBox BDA-extension preffered except Prof 7500.
 ----------

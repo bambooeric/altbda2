@@ -2,9 +2,6 @@
 
 #include "DvbDeviceControl.h"
 
-//#define TEVII_FULL
-//#define TT_FULL
-
 CDvbDeviceControl::CDvbDeviceControl(HMODULE hModule)
 {
 	hInstance = hModule;
@@ -168,21 +165,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				if FAILED(BdaGraph.DVBS_Twinhan_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
 				break;
-#ifdef TEVII_FULL
-			case TV_BDA:
-				if(FAILED(BdaGraph.DVBS_TeVii_Tune(
-					(ULONG)(DEFAULT_LOW_OSCILLATOR),
-					(ULONG)(DEFAULT_HIGH_OSCILLATOR),
-					(ULONG)(DEFAULT_LNB_SWITCH),
-					(ULONG)(DEFAULT_FREQUENCY_S),
-					DEFAULT_INVERSION_S,
-					DEFAULT_MODULATION_S,
-					(LONG)(DEFAULT_SYMBOLRATE_S),
-					(d->polarity == LNB_POWER_ON) ? DEFAULT_POLARISATION : BDA_POLARISATION_NOT_DEFINED,
-					DEFAULT_FEC)))
-					return AltxDVB_ERR;
-				break;
-#endif
 			default:
 				if(FAILED(BdaGraph.DVBS_Tune(
 					(ULONG)(DEFAULT_LOW_OSCILLATOR),
@@ -339,21 +321,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					PosOpt)))
 				return AltxDVB_ERR;
 			break;
-#ifdef TEVII_FULL
-		case TV_BDA:
-			if(FAILED(BdaGraph.DVBS_TeVii_Tune(
-				(ULONG)(d->lnb_low),
-				(ULONG)(d->lnb_high),
-				(ULONG)(d->lnb_switch),
-				(ULONG)(d->frequency),
-				SpectrInv,
-				ModType,
-				(LONG)(d->symbol_rate),
-				Pol,
-				Fec)))
-				return AltxDVB_ERR;
-			break;
-#endif
 		case DW_BDA:
 			if(FAILED(BdaGraph.DVBS_DvbWorld_Tune(
 				(ULONG)(d->lnb_low),
@@ -423,16 +390,6 @@ int CDvbDeviceControl::SignalStatistics(struct SIGNAL_STATISTICS_DATA *d)
 
 	switch(conf_params.VendorSpecific)
 	{
-#ifdef TEVII_FULL
-	case TV_BDA:
-		hr = BdaGraph.GetTeViiSignalStatistics(&present,&locked,&strength,&quality);
-		break;
-#endif
-#ifdef TT_FULL
-	case TT_BDA:
-		hr = BdaGraph.GetTechnotrendSignalStatistics(&present,&locked,&strength,&quality);
-		break;
-#endif
 	default:
 		hr = BdaGraph.GetSignalStatistics(&present,&locked,&strength,&quality);
 	}
@@ -492,6 +449,10 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 		break;
 	case CXT_BDA:
 		if (BdaGraph.DVBS_Conexant_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
+	case BST_BDA:
+		if (BdaGraph.DVBS_Bestunar_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	case TBS_BDA:
