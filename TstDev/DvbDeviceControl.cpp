@@ -321,21 +321,6 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 					PosOpt)))
 				return AltxDVB_ERR;
 			break;
-		case DW_BDA:
-			if(FAILED(BdaGraph.DVBS_DvbWorld_Tune(
-				(ULONG)(d->lnb_low),
-				(ULONG)(d->lnb_high),
-				(ULONG)(d->lnb_switch),
-				(ULONG)(d->frequency),
-				SpectrInv,
-				ModType,
-				(LONG)(d->symbol_rate),
-				Pol,
-				Fec,
-				DiSEqC_Port,
-				d->switches==TONEBURST_B)))
-				return AltxDVB_ERR;
-			break;
 		default:
 			if(FAILED(BdaGraph.DVBS_Tune(
 				(ULONG)(d->lnb_low),
