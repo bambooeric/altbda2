@@ -6,6 +6,7 @@
 
 HRESULT CBdaGraph::DVBS_TurbosightNXP_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -35,6 +36,7 @@ HRESULT CBdaGraph::DVBS_TurbosightNXP_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -71,6 +73,7 @@ HRESULT CBdaGraph::DVBS_Turbosight_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Turbosight_LNBPower(BOOL bPower)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	HRESULT hr;
 	ULONG bytesReturned = 0;
 	char text[256];
@@ -97,6 +100,7 @@ HRESULT CBdaGraph::DVBS_Turbosight_LNBPower(BOOL bPower)
 
 HRESULT CBdaGraph::DVBS_TurbosightQBOX_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>5))
 		return E_INVALIDARG;
@@ -127,6 +131,7 @@ HRESULT CBdaGraph::DVBS_TurbosightQBOX_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_TurbosightQBOX_LNBPower(BOOL bLNBPower)
 {
+	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 	HRESULT hr;
 	ULONG bytesReturned = 0;
 	char text[256];

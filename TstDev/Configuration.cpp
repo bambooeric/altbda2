@@ -100,13 +100,33 @@ void CConfiguration::ConfCaps()
 		break;
 	case OMC_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
 		ReportMessage("Omicom BDA extension used !");
+		break;
+	case COMPRO_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Compro BDA extension used !");
+		break;
+	case ANYSEE_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+		ReportMessage("AnySee BDA extension used !");
+		break;
+	case GNP_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+		ReportMessage("Genpix 3dparty BDA extension used !");
+		break;
+	case GENPIX_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
+		ReportMessage("Genpix BDA extension used !");
 		break;
 	case MS_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
-				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED;
-				//conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
+				//conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED;
+				conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
 		ReportMessage("Microsoft BDA extension used !");
 		break;
 	case PURE_BDA:

@@ -53,6 +53,21 @@ BOOL ConfDialog::OnInitDialog()
 	case OMC_BDA:
 		m_strBDAExt = "Omicom BDA";
 		break;
+	case BST_BDA:
+		m_strBDAExt = "Bestunar BDA";
+		break;
+	case COMPRO_BDA:
+		m_strBDAExt = "Compro BDA";
+		break;
+	case ANYSEE_BDA:
+		m_strBDAExt = "AnySee BDA";
+		break;
+	case GNP_BDA:
+		m_strBDAExt = "Genpix BDA";
+		break;
+	case GENPIX_BDA:
+		m_strBDAExt = "Genpix advanced BDA";
+		break;
 	case MS_BDA:
 		m_strBDAExt = "Microsoft BDA";
 		break;

@@ -4,7 +4,7 @@
 
 HRESULT CBdaGraph::DVBS_Omicom_Set22Khz(BOOL b22Khz)
 {
-   CheckPointer(m_pKsTunerFilterPropSet,E_POINTER);
+   CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 
    char text[256];
    HRESULT hr=S_OK;
@@ -36,11 +36,11 @@ HRESULT CBdaGraph::DVBS_Omicom_Set22Khz(BOOL b22Khz)
 
 HRESULT CBdaGraph::DVBS_Omicom_ToneBurst(BOOL bToneBurst)
 {
-    CheckPointer(m_pKsTunerFilterPropSet,E_POINTER);
+    CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 
-   char text[256];
-   HRESULT hr=S_OK;
-   DWORD supported;
+	char text[256];
+	HRESULT hr=S_OK;
+	DWORD supported;
 
   	hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPSETID_OmcDiSEqCProperties,
 		KSPROPERTY_OMC_DISEQC_TONEBURST, &supported);
@@ -68,7 +68,7 @@ HRESULT CBdaGraph::DVBS_Omicom_ToneBurst(BOOL bToneBurst)
 
 HRESULT CBdaGraph::DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
-    CheckPointer(m_pKsTunerFilterPropSet,E_POINTER);
+    CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_INVALIDARG);
 
 	OMC_BDA_DISEQC_DATA diseqc_data;

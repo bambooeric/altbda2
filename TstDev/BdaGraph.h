@@ -182,7 +182,14 @@ public:
 	HRESULT DVBS_DvbWorld_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Omicom_Set22Khz(BOOL b22Khz);
 	HRESULT DVBS_Omicom_ToneBurst(BOOL bToneBurst);
-	HRESULT DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command);	
+	HRESULT DVBS_Omicom_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Compro_LNBPower(BOOL bPower);
+	HRESULT DVBS_Compro_Set22Khz(BOOL b22Khz);
+	HRESULT DVBS_Compro_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_AnySee_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE ToneBurst);
+	HRESULT DVBS_GenpixOld_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
+	HRESULT DVBS_Genpix_ToneBurst(BOOL bToneBurst);
 
 	void SetStreamCallbackProcedure(STR_CB_PROC);
 
@@ -209,6 +216,7 @@ private:
 	CCallbackFilter	*pCallbackInstance;		// callback filter object
 #endif //SG_USE
 	IKsPropertySet	*m_pKsTunerFilterPropSet; // Tuner filter proprietary interface
+	IKsPropertySet	*m_pKsCaptureFilterPropSet; // Capture filter proprietary interface
 	IKsPropertySet	*m_pKsTunerPropSet;		// Tuner proprietary interface
 	IKsPropertySet	*m_pKsDemodPropSet;		// Demod proprietary interface
 	IKsControl		*m_pTunerControl;		// IKsControl for tuner

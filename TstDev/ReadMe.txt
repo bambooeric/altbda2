@@ -1,13 +1,19 @@
 This is a new BDA interface wrapper for AltDVB v2.2.
 
-!!! TeVii.dll must be placed in directory with AltDVB.exe !!!
-
 The configuration file (Dev_Bda2Driver.cfg) should be placed in the same folder
 as the interface (Dev_Bda2Driver.int). If this file doesn't exist, the interface driver
 will create a new one with default values.
 
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
+
+v 0.2.0.16 - 2011.12.25 - CrazyCat
+- Genpix BDA-extension support (ToneBurst, DiSEqC 1.x).
+- Genpix 3dparty BDA-extension support (ToneBurst. DiSEqC 1.x).
+- Compro BDA-extension support (DiSEqC 1.x, LNB power control).
+- AnySee BDA-extension support (Toneburst, DiSEqC 1.x control).
+- DVBWorld support improved.
+----------
 
 v 0.2.0.15 - 2011.12.01 - CrazyCat
 - Bestunar/DVBSky BDA-extension support (DiSEqC 1.x control).

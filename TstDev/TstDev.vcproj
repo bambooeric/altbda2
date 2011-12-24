@@ -212,6 +212,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cmpbda.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ConfDialog.cpp"
 				>
 			</File>
@@ -282,11 +286,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\asbda.h"
+				>
+			</File>
+			<File
 				RelativePath=".\BdaGraph.h"
 				>
 			</File>
 			<File
 				RelativePath=".\CallbackFilter.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cmpbda.h"
 				>
 			</File>
 			<File
@@ -311,6 +323,10 @@
 			</File>
 			<File
 				RelativePath=".\dwBdaApi.h"
+				>
+			</File>
+			<File
+				RelativePath=".\gnpbda.h"
 				>
 			</File>
 			<File

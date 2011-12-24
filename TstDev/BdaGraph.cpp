@@ -5,6 +5,9 @@
 #include "qboxbda.h"
 #include "omcbda.h"
 #include "tvbda.h"
+#include "cmpbda.h"
+#include "asbda.h"
+#include "gnpbda.h"
 
 #define Z(a) memset(&a, 0, sizeof(a))
 
@@ -20,11 +23,13 @@ CBdaGraph::CBdaGraph()
 	m_pKsTunerPropSet = NULL;
 	m_pKsDemodPropSet = NULL;
 	m_pKsTunerFilterPropSet = NULL;
+	m_pKsCaptureFilterPropSet = NULL;
 	m_pTunerControl = NULL;
 	m_pMediaControl = NULL;
 	pCallbackInstance = NULL;
 	pNetworkProviderInstance = NULL;
 	hTT = hDW =  INVALID_HANDLE_VALUE;
+	CoInitialize(0);
 }
 
 CBdaGraph::~CBdaGraph()
@@ -519,8 +524,8 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		return hr;
 	}
 	// add tuner to the graph
-sprintf(text,"BDA2: BuildGraph: Adding Network Tuner to graph");
-ReportMessage(text);
+	sprintf(text,"BDA2: BuildGraph: Adding Network Tuner to graph");
+	ReportMessage(text);
 	hr = m_pFilterGraph->AddFilter(m_pTunerDevice, friendly_name_tuner);
 	if(FAILED(hr))
 	{
@@ -596,6 +601,22 @@ ReportMessage(text);
 	m_pP1 = GetOutPin(m_pTunerDevice, 0);
 	// let's look if Demod exposes proprietary interfaces
 	hr = m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet);
+	if (hr==S_OK)
+	{
+		DWORD supported;
+		sprintf(text,"BDA2: BuildGraph: Demod exposes proprietary interfaces");
+		ReportMessage(text);
+		// Genpix 3dparty
+		DebugLog("BDA2: BuildGraph: checking for Genpix 3dparty DiSEqC interface");
+		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_GnpBdaExtendedProperty,
+			GNP_BDA_DISEQC, &supported);
+		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+		{
+			DebugLog("BDA2: BuildGraph: found Genpix 3dparty DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(GNP_BDA);
+		}
+	}
+
 	if (TTDevCat!=UNKNOWN)
 	{
 		DebugLog("BDA2: BuildGraph: checking for Technotrend DiSEqC interface");
@@ -681,22 +702,22 @@ ReportMessage(text);
 			*VendorSpecific = VENDOR_SPECIFIC(TH_BDA);
 		}
 		// TeVii
-		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS460,
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS2,
 			KSPROPERTY_BDA_DISEQC, &supported);
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
 		{
 			iTVIdx=1;
-			DebugLog("BDA2: BuildGraph: found TeVii S460 DiSEqC interface");
+			DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
 		}
 		else
 		{
-			hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS420,
+			hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS1,
 				KSPROPERTY_BDA_DISEQC, &supported);
 			if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
 			{
 				iTVIdx=0;
-				DebugLog("BDA2: BuildGraph: found TeVii S420 DiSEqC interface");
+				DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
 				*VendorSpecific = VENDOR_SPECIFIC(TV_BDA);
 			}
 		}
@@ -723,25 +744,22 @@ ReportMessage(text);
 			DebugLog("BDA2: BuildGraph: found Omicom DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
 		}
-	}
-
-	if (m_pKsTunerPropSet)
-	{
-		DWORD supported=0;
-		// Microsoft
-		DebugLog("BDA2: BuildGraph: checking for Microsoft DiSEqC interface");
-		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
-			KSPROPERTY_BDA_DISEQC_ENABLE, &supported);
-		if(SUCCEEDED(hr) && supported)
+		// Compro
+		hr = m_pKsTunerFilterPropSet->QuerySupported(VAMP_DVBS_DISEQC_ACCESS_PROPERTY,
+			VAMP_DVBS_DISEQC_PROP_ID_RAW_COMMAND, &supported);
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
 		{
-			DebugLog("BDA2: BuildGraph: found Microsoft DiSEqC interface");
-			if ( (*VendorSpecific == VENDOR_SPECIFIC(PURE_BDA)) || (PrefBDA == VENDOR_SPECIFIC(MS_BDA)) )
-			{
-				if (*VendorSpecific == VENDOR_SPECIFIC(TT_BDA))
-					if (INVALID_HANDLE_VALUE!=hTT)
-						bdaapiClose(hTT);
-				*VendorSpecific = VENDOR_SPECIFIC(MS_BDA);
-			}
+			DebugLog("BDA2: BuildGraph: found Compro DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
+		}
+		// Genpix advanced
+		DebugLog("BDA2: BuildGraph: checking for Genpix DiSEqC interface");
+		hr = m_pKsTunerFilterPropSet->QuerySupported(KSPROPERTYSET_GnpTunerControl,
+			KSPROPERTY_SET_DISEQC, &supported);
+		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+		{
+			DebugLog("BDA2: BuildGraph: found Genpix DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(GENPIX_BDA);
 		}
 	}
 
@@ -981,6 +999,45 @@ ReportMessage(text);
 			return hr;
 		}
 	}
+
+	if (m_pReceiver)
+	{
+		// let's look if Tuner filter exposes proprietary interfaces
+		hr = m_pReceiver->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsCaptureFilterPropSet);
+		if (hr==S_OK)
+		{
+			DWORD supported;
+			// anySee
+			hr = m_pKsCaptureFilterPropSet->QuerySupported(GUID_ANYSEE_CAPTURE_FILTER_PROPERTY,
+				PROPERTY_SEND_DiSEqC_DATA, &supported);
+			if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+			{
+				DebugLog("BDA2: BuildGraph: found anySee DiSEqC interface");
+				*VendorSpecific = VENDOR_SPECIFIC(ANYSEE_BDA);
+			}
+		}
+	}
+
+	if (m_pKsTunerPropSet)
+	{
+		DWORD supported=0;
+		// Microsoft
+		DebugLog("BDA2: BuildGraph: checking for Microsoft DiSEqC interface");
+		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaDiseqCommand,
+			KSPROPERTY_BDA_DISEQC_ENABLE, &supported);
+		if(SUCCEEDED(hr) && supported)
+		{
+			DebugLog("BDA2: BuildGraph: found Microsoft DiSEqC interface");
+			if ( (*VendorSpecific == VENDOR_SPECIFIC(PURE_BDA)) || (PrefBDA == VENDOR_SPECIFIC(MS_BDA)) )
+			{
+				if (*VendorSpecific == VENDOR_SPECIFIC(TT_BDA))
+					if (INVALID_HANDLE_VALUE!=hTT)
+						bdaapiClose(hTT);
+				*VendorSpecific = VENDOR_SPECIFIC(MS_BDA);
+			}
+		}
+	}
+
 	hr = m_pFilterGraph->QueryInterface(IID_IMediaControl, (void **)&m_pMediaControl);
 	if(FAILED(hr))
 	{
@@ -1059,6 +1116,11 @@ void CBdaGraph::CloseGraph()
 	{
 		m_pKsTunerFilterPropSet->Release();
 		m_pKsTunerFilterPropSet = NULL;
+	}
+	if(m_pKsCaptureFilterPropSet)
+	{
+		m_pKsCaptureFilterPropSet->Release();
+		m_pKsCaptureFilterPropSet = NULL;
 	}
 	if(m_pTunerControl)
 	{
@@ -1635,6 +1697,7 @@ HRESULT CBdaGraph::DVBS_Technotrend_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE 
 
 HRESULT CBdaGraph::DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE repeats)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>8))
 		return E_INVALIDARG;
@@ -1712,6 +1775,7 @@ HRESULT CBdaGraph::DVBS_Microsoft_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE re
 
 HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -1723,8 +1787,8 @@ HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	diseqc_msg.length=len;
 	diseqc_msg.b_last_message = TRUE;
 	diseqc_msg.power = 0;
-	hr = m_pKsTunerPropSet->Set(iTVIdx ? KSPROPSETID_BdaTunerExtensionPropertiesTeViiS460 :
-										KSPROPSETID_BdaTunerExtensionPropertiesTeViiS420,
+	hr = m_pKsTunerPropSet->Set(iTVIdx ? KSPROPSETID_BdaTunerExtensionPropertiesTeViiS2 :
+										KSPROPSETID_BdaTunerExtensionPropertiesTeViiS1,
 										KSPROPERTY_BDA_DISEQC,
 										&diseqc_msg, sizeof(diseqc_msg), &diseqc_msg, sizeof(diseqc_msg));
 	if(SUCCEEDED(hr))
@@ -1737,6 +1801,7 @@ HRESULT CBdaGraph::DVBS_TeVii_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>12))
 		return E_INVALIDARG;
@@ -1755,6 +1820,7 @@ HRESULT CBdaGraph::DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Twinhan_LNBPower(BOOL bPower)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	LNB_DATA lnb_data;
 	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
 	{
@@ -1771,6 +1837,7 @@ HRESULT CBdaGraph::DVBS_Twinhan_LNBPower(BOOL bPower)
 
 HRESULT CBdaGraph::DVBS_Twinhan_LNBSource (BYTE Port, BYTE ToneBurst)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	LNB_DATA lnb_data;
 	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
 	{
@@ -1806,4 +1873,108 @@ HRESULT CBdaGraph::DVBS_DvbWorld_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	sprintf(text,"BDA2: DVBS_DvbWorld_DiSEqC: sent DiSEqC command");
 	ReportMessage(text);
 	return S_OK;
+}
+
+HRESULT CBdaGraph::DVBS_AnySee_DiSEqC(BYTE len, BYTE *DiSEqC_Command, BYTE ToneBurst)
+{
+	CheckPointer(m_pKsCaptureFilterPropSet,E_NOINTERFACE);
+	PROPERTY_DiSEqC_S cmd;
+
+	if (len>_countof(cmd.Data))
+		return E_INVALIDARG;
+
+	if (len) CheckPointer(DiSEqC_Command,E_POINTER);
+
+	HRESULT hr = S_OK;
+	
+	CopyMemory(cmd.Data,DiSEqC_Command,len);
+	cmd.dwLength=len;
+	cmd.ToneBurst=ToneBurst;
+
+	hr = m_pKsCaptureFilterPropSet->Set(GUID_ANYSEE_CAPTURE_FILTER_PROPERTY,
+								PROPERTY_SEND_DiSEqC_DATA,
+								&cmd, sizeof(cmd),
+								&cmd, sizeof(cmd));
+	if(SUCCEEDED(hr))
+		ReportMessage("BDA2: DVBS_AnySee_DiSEqC: success");
+	else
+		ReportMessage("BDA2: DVBS_AnySee_DiSEqC: failed");
+
+	return hr;
+}
+
+HRESULT CBdaGraph::DVBS_GenpixOld_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(m_pKsDemodPropSet,E_NOINTERFACE);
+	GNP_DISEQC_CMD cmd;
+	
+	if (!len || len>_countof(cmd.ucMessage))
+		return E_INVALIDARG;
+
+	CheckPointer(DiSEqC_Command,E_POINTER);
+
+	HRESULT hr = S_OK;
+	
+	cmd.ucMessageLength=len;
+	CopyMemory(cmd.ucMessage,DiSEqC_Command,len);
+	hr = m_pKsDemodPropSet->Set(KSPROPSETID_GnpBdaExtendedProperty,
+								GNP_BDA_DISEQC,
+								NULL, 0,
+								&cmd, sizeof(cmd));
+	if(SUCCEEDED(hr))
+		ReportMessage("BDA2: DVBS_GenpixOld_DiSEqC: success");
+	else
+		ReportMessage("BDA2: DVBS_GenpixOld_DiSEqC: failed");
+
+	return hr;
+}
+
+HRESULT CBdaGraph::DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
+	TUNER_COMMAND cmd;
+
+	if (!len || len>_countof(cmd.DiSEqC_Command))
+		return E_INVALIDARG;
+
+	CheckPointer(DiSEqC_Command,E_POINTER);
+
+	HRESULT hr = S_OK;
+	
+	CopyMemory(cmd.DiSEqC_Command,DiSEqC_Command,len);
+	cmd.DiSEqC_Length=len;
+	cmd.ForceHighVoltage=TRUE;
+
+	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_GnpTunerControl,
+								KSPROPERTY_SET_DISEQC,
+								NULL, 0,
+								&cmd, sizeof(cmd));
+	if(SUCCEEDED(hr))
+		ReportMessage("BDA2: DVBS_Genpix_DiSEqC: success");
+	else
+		ReportMessage("BDA2: DVBS_Genpix_DiSEqC: failed");
+
+	return hr;
+}
+
+HRESULT CBdaGraph::DVBS_Genpix_ToneBurst(BOOL bToneBurst)
+{
+	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
+	TUNER_COMMAND cmd;
+
+	HRESULT hr = S_OK;
+	
+	cmd.DiSEqC_Command[0] = bToneBurst ? 1:0;
+	cmd.DiSEqC_Length = 0;
+	cmd.ForceHighVoltage = TRUE;
+	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_GnpTunerControl,
+								KSPROPERTY_SET_DISEQC,
+								NULL, 0,
+								&cmd, sizeof(cmd));
+	if(SUCCEEDED(hr))
+		ReportMessage("BDA2: DVBS_Genpix_ToneBurst: success");
+	else
+		ReportMessage("BDA2: DVBS_Genpix_ToneBurst: failed");
+
+	return hr;
 }

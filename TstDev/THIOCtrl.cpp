@@ -9,8 +9,7 @@ BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
 									DWORD  nOutBufferSize,
 									LPDWORD lpBytesReturned)
 {
-    if (!m_pKsTunerPropSet)
-        return FALSE;
+	CheckPointer(m_pKsTunerPropSet,FALSE);
 
     KSPROPERTY instance_data;
 

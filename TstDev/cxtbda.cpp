@@ -5,6 +5,7 @@
 
 HRESULT CBdaGraph::DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -40,6 +41,7 @@ HRESULT CBdaGraph::DVBS_Hauppauge_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -76,6 +78,7 @@ HRESULT CBdaGraph::DVBS_Conexant_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Bestunar_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	CheckPointer(DiSEqC_Command,E_POINTER);
 	if ((len==0) || (len>6))
 		return E_INVALIDARG;
@@ -112,6 +115,7 @@ HRESULT CBdaGraph::DVBS_Bestunar_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 
 HRESULT CBdaGraph::DVBS_Conexant_LNBPower(BOOL bPower)
 {
+	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	HRESULT hr;
 	char text[256];
 	KSPROPERTY instance_data;

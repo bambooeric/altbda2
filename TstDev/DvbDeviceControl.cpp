@@ -165,6 +165,10 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				if FAILED(BdaGraph.DVBS_Twinhan_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
 				break;
+			case COMPRO_BDA:
+				if FAILED(BdaGraph.DVBS_Compro_LNBPower(d->polarity == LNBPOWER_ON))
+					return AltxDVB_ERR;
+				break;
 			default:
 				if(FAILED(BdaGraph.DVBS_Tune(
 					(ULONG)(DEFAULT_LOW_OSCILLATOR),
@@ -259,6 +263,18 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				break;
 			case TH_BDA:
 				BdaGraph.DVBS_Twinhan_LNBSource(DiSEqC_Port, DiSEqC_Port==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
+				break;
+			case ANYSEE_BDA:
+				BdaGraph.DVBS_AnySee_DiSEqC(0,NULL,DiSEqC_Port);
+				break;
+			case GNP_BDA:
+				{
+					BYTE cmd = DiSEqC_Port==TONEBURST_A ? 1 : 0;
+					BdaGraph.DVBS_GenpixOld_DiSEqC(1,&cmd);
+				}
+				break;
+			case GENPIX_BDA:
+				BdaGraph.DVBS_Genpix_ToneBurst(DiSEqC_Port==TONEBURST_A ? Tone_Burst_OFF : Tone_Burst_ON);
 				break;
 			}
 		}
@@ -373,11 +389,7 @@ int CDvbDeviceControl::SignalStatistics(struct SIGNAL_STATISTICS_DATA *d)
 	d->strength = 0;
 	d->flags = 0x0;
 
-	switch(conf_params.VendorSpecific)
-	{
-	default:
-		hr = BdaGraph.GetSignalStatistics(&present,&locked,&strength,&quality);
-	}
+	hr = BdaGraph.GetSignalStatistics(&present,&locked,&strength,&quality);
 
 	if(SUCCEEDED(hr))
 	{
@@ -468,6 +480,24 @@ int CDvbDeviceControl::DiSEqC_Command(struct DISEQC_COMMAND_DATA *d)
 		BdaGraph.DVBS_Omicom_Set22Khz(TRUE);
 		Sleep(50);
 		if (BdaGraph.DVBS_Omicom_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
+	case COMPRO_BDA:
+		BdaGraph.DVBS_Compro_Set22Khz(TRUE);
+		Sleep(50);
+		if (BdaGraph.DVBS_Compro_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
+	case ANYSEE_BDA:
+		if (BdaGraph.DVBS_AnySee_DiSEqC(d->len, d->DiSEqC_Command,0)!=S_OK)
+			return AltxDVB_ERR;
+		break;
+	case GNP_BDA:
+		if (BdaGraph.DVBS_GenpixOld_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
+			return AltxDVB_ERR;
+		break;
+	case GENPIX_BDA:
+		if (BdaGraph.DVBS_Genpix_DiSEqC(d->len, d->DiSEqC_Command)!=S_OK)
 			return AltxDVB_ERR;
 		break;
 	}
