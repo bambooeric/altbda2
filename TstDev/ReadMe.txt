@@ -7,6 +7,9 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.17 - 2012.04.07 - CrazyCat
+- Fix Compro BDA-extension support (DiSEqC 1.x).
+
 v 0.2.0.16 - 2011.12.25 - CrazyCat
 - Genpix BDA-extension support (ToneBurst, DiSEqC 1.x).
 - Genpix 3dparty BDA-extension support (ToneBurst. DiSEqC 1.x).
