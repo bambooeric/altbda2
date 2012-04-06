@@ -651,7 +651,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 
 	// let's look if Tuner exposes proprietary interfaces
 	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
-	if (hr==S_OK)
+	if (hr==S_OK && *VendorSpecific == PURE_BDA)
 	{
 		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");
@@ -750,7 +750,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) )
 		{
 			DebugLog("BDA2: BuildGraph: found Compro DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(OMC_BDA);
+			*VendorSpecific = VENDOR_SPECIFIC(COMPRO_BDA);
 		}
 		// Genpix advanced
 		DebugLog("BDA2: BuildGraph: checking for Genpix DiSEqC interface");

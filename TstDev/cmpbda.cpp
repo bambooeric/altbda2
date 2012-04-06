@@ -88,7 +88,7 @@ HRESULT CBdaGraph::DVBS_Compro_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 		memcpy(cmd,DiSEqC_Command,len);
 	  	hr = m_pKsTunerFilterPropSet->Set(VAMP_DVBS_DISEQC_ACCESS_PROPERTY,
 			VAMP_DVBS_DISEQC_PROP_ID_RAW_COMMAND,
-			&cmd_len, sizeof(cmd_len),
+			&cmd_len, sizeof(cmd_len) + sizeof(KSPROPERTY),
 			&cmd, sizeof(cmd));
 		if FAILED(hr)
 			sprintf(text,"BDA2: DVBS_Compro_DiSEqC: failed sending VAMP_DVBS_DISEQC_PROP_ID_RAW_COMMAND (0x%8.8x)", hr);
