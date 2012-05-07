@@ -169,6 +169,11 @@ int CDvbDeviceControl::Tune(struct TUNE_DATA *d)
 				if FAILED(BdaGraph.DVBS_Compro_LNBPower(d->polarity == LNBPOWER_ON))
 					return AltxDVB_ERR;
 				break;
+			case TV_BDA:
+			case BST_BDA:
+				if FAILED(BdaGraph.DVBS_SetPolarity(d->polarity == LNBPOWER_OFF ? BDA_POLARISATION_NOT_DEFINED : DEFAULT_POLARISATION))
+					return AltxDVB_ERR;
+				break;
 			default:
 				if(FAILED(BdaGraph.DVBS_Tune(
 					(ULONG)(DEFAULT_LOW_OSCILLATOR),

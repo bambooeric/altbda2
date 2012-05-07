@@ -801,3 +801,34 @@ CFactoryTemplate g_Templates[1] =
 };
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
 */
+
+HRESULT CDVBNetworkProviderFilter::PutDVBSPolarity(Polarisation Pol)
+{
+	HRESULT hr;
+	IBaseFilter *filt;
+	IBDA_FrequencyFilter *pFreqFilter = NULL;
+	ULONG device_index;
+
+	CAutoLock lock(m_pLock);
+	for(device_index=0; device_index<SID; ++device_index)
+	{
+		hr = RegisteredDevices[device_index].Control->QueryInterface(IID_IBaseFilter, (void **)&filt);
+		if(FAILED(hr))
+		{
+			DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed getting Control device Interface")));
+			return hr;
+		}
+		hr = GetTopology(filt, IID_IBDA_FrequencyFilter, (void **)&pFreqFilter);
+		if(SUCCEEDED(hr))
+			break;
+	}
+	if(device_index == SID)
+	{
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed finding IBDA_FrequencyFilter topology")));
+		return E_FAIL;
+	}
+	hr = pFreqFilter->put_Polarity(Pol);
+	if(FAILED(hr))
+		DbgLog((LOG_TRACE,0,TEXT("BDA2: CDVBNetworkProviderFilter.DoDVBSTuning: failed put_Polarity")));
+	return hr;
+}

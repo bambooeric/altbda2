@@ -114,6 +114,7 @@ public:
 		ULONG Frequency,
 		LONG SymRate,
 		ModulationType ModType);
+	HRESULT PutDVBSPolarity(Polarisation Pol);
 	HRESULT GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality);
 
 private:
@@ -122,7 +123,6 @@ private:
 	IBDA_SignalStatistics *pSignalLocked;
 	IBDA_SignalStatistics *pSignalStrength;
 	IBDA_SignalStatistics *pSignalQuality;
-
 
 	HRESULT CreateOutputPin(IPin *pin);
 	HRESULT GetMultipleTopology(IBaseFilter *pFilter, GUID Topology, int *node_cnt, void **pIUnknown);

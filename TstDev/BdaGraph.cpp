@@ -600,8 +600,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 
 	m_pP1 = GetOutPin(m_pTunerDevice, 0);
 	// let's look if Demod exposes proprietary interfaces
-	hr = m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet);
-	if (hr==S_OK)
+	if SUCCEEDED(m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet))
 	{
 		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Demod exposes proprietary interfaces");
@@ -637,8 +636,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 	}
 
 	CComPtr <IKsObject> m_piKsObject; //KsObject Interface
-	hr = m_pTunerDevice->QueryInterface(IID_IKsObject,(void**)&m_piKsObject);
-	if SUCCEEDED(hr)
+	if SUCCEEDED(m_pTunerDevice->QueryInterface(IID_IKsObject,(void**)&m_piKsObject))
 	{
 		hDW = m_piKsObject->KsGetObjectHandle();
 		DW_ID InfoDW;
@@ -650,8 +648,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 	}
 
 	// let's look if Tuner exposes proprietary interfaces
-	hr = m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet);
-	if (hr==S_OK && *VendorSpecific == PURE_BDA)
+	if SUCCEEDED(m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet))
 	{
 		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");
@@ -660,7 +657,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		DebugLog("BDA2: BuildGraph: checking for Bestunar DiSEqC interface");
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesBst,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
-		if(SUCCEEDED(hr) && supported)
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (*VendorSpecific == PURE_BDA) )
 		{
 			DebugLog("BDA2: BuildGraph: found Bestunar DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(BST_BDA);
@@ -669,7 +666,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		DebugLog("BDA2: BuildGraph: checking for Hauppauge DiSEqC interface");
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesHaup,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
-		if(SUCCEEDED(hr) && supported)
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (*VendorSpecific == PURE_BDA) )
 		{
 			DebugLog("BDA2: BuildGraph: found Hauppauge DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(HAUP_BDA);
@@ -677,7 +674,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		// Conexant
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (supported & KSPROPERTY_SUPPORT_SET) )
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (supported & KSPROPERTY_SUPPORT_SET) && (*VendorSpecific == PURE_BDA))
 		{
 			DebugLog("BDA2: BuildGraph: found Conexant DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(CXT_BDA);
@@ -685,18 +682,18 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		// Turbosight
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionProperties,
 			KSPROPERTY_BDA_DISEQC_MESSAGE, &supported);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (!(supported & KSPROPERTY_SUPPORT_SET)) )
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_GET) && (!(supported & KSPROPERTY_SUPPORT_SET)) && (*VendorSpecific == PURE_BDA) )
 		{
 			DebugLog("BDA2: BuildGraph: found Turbosight-Conexant DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_BDA);
 		}
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) && (*VendorSpecific == PURE_BDA) )
 		{
 			DebugLog("BDA2: BuildGraph: found Turbosight-NXP DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TBS_NXP_BDA);
 		}
 		// Twinhan
-		if (THBDA_IOCTL_CHECK_INTERFACE_Fun())
+		if ( SUCCEEDED(THBDA_IOCTL_CHECK_INTERFACE_Fun()) && (*VendorSpecific == PURE_BDA) )
 		{
 			DebugLog("BDA2: BuildGraph: found Twinhan DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(TH_BDA);
@@ -704,7 +701,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		// TeVii
 		hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS2,
 			KSPROPERTY_BDA_DISEQC, &supported);
-		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+		if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) && (*VendorSpecific == PURE_BDA) )
 		{
 			iTVIdx=1;
 			DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
@@ -714,7 +711,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		{
 			hr = m_pKsTunerPropSet->QuerySupported(KSPROPSETID_BdaTunerExtensionPropertiesTeViiS1,
 				KSPROPERTY_BDA_DISEQC, &supported);
-			if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) )
+			if ( SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET) && (!(supported & KSPROPERTY_SUPPORT_GET)) && (*VendorSpecific == PURE_BDA) )
 			{
 				iTVIdx=0;
 				DebugLog("BDA2: BuildGraph: found TeVii DiSEqC interface");
@@ -724,8 +721,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 	}
 
 	// let's look if Tuner filter exposes proprietary interfaces
-	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet);
-	if (hr==S_OK)
+	if SUCCEEDED(m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerFilterPropSet))
 	{
 		DWORD supported;		
 		// Turbosight QBOX
@@ -1582,6 +1578,14 @@ HRESULT CBdaGraph::DVBC_Tune(
 		return E_FAIL;
 }
 
+HRESULT CBdaGraph::DVBS_SetPolarity(Polarisation Pol)
+{
+	if(pNetworkProviderInstance)
+		return pNetworkProviderInstance->PutDVBSPolarity(Pol);
+	else
+		return E_FAIL;
+}
+
 HRESULT CBdaGraph::GetSignalStatistics(BOOLEAN *pPresent, BOOLEAN *pLocked, LONG *pStrength, LONG *pQuality)
 {
 	if(pNetworkProviderInstance)
@@ -1809,7 +1813,7 @@ HRESULT CBdaGraph::DVBS_Twinhan_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	DiSEqC_DATA diseqc_cmd;
 	diseqc_cmd.command_len = len;
 	memcpy(diseqc_cmd.command, DiSEqC_Command, len);
-	if (THBDA_IOCTL_SET_DiSEqC_Fun(&diseqc_cmd))
+	if SUCCEEDED(THBDA_IOCTL_SET_DiSEqC_Fun(&diseqc_cmd))
 	{
 		ReportMessage("BDA2: DVBS_Twinhan_DiSEqC: success");
 		return S_OK;
@@ -1822,7 +1826,7 @@ HRESULT CBdaGraph::DVBS_Twinhan_LNBPower(BOOL bPower)
 {
 	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	LNB_DATA lnb_data;
-	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
+	if SUCCEEDED(THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
 	{
 		lnb_data.LNB_POWER = bPower ? LNB_POWER_ON : LNB_POWER_OFF;
 		if (THBDA_IOCTL_SET_LNB_DATA_Fun(&lnb_data))
@@ -1839,7 +1843,7 @@ HRESULT CBdaGraph::DVBS_Twinhan_LNBSource (BYTE Port, BYTE ToneBurst)
 {
 	CheckPointer(m_pKsTunerPropSet,E_NOINTERFACE);
 	LNB_DATA lnb_data;
-	if (THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
+	if SUCCEEDED(THBDA_IOCTL_GET_LNB_DATA_Fun(&lnb_data))
 	{
 		lnb_data.DiSEqC_Port = Port;
 		lnb_data.Tone_Data_Burst = ToneBurst;

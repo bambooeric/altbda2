@@ -2,14 +2,14 @@
 #include "BdaGraph.h"
 
 //THBDA Ioctl functions
-BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
-									LPVOID lpInBuffer,
-									DWORD  nInBufferSize,
-									LPVOID lpOutBuffer,
-									DWORD  nOutBufferSize,
-									LPDWORD lpBytesReturned)
+HRESULT CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
+										  LPVOID lpInBuffer,
+										  DWORD  nInBufferSize,
+										  LPVOID lpOutBuffer,
+										  DWORD  nOutBufferSize,
+										  LPDWORD lpBytesReturned)
 {
-	CheckPointer(m_pKsTunerPropSet,FALSE);
+    CheckPointer(m_pKsTunerPropSet, E_NOINTERFACE)
 
     KSPROPERTY instance_data;
 
@@ -25,12 +25,10 @@ BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
     THBDACmd.nOutBufferSize = nOutBufferSize;
     THBDACmd.lpBytesReturned = lpBytesReturned;
 
-    HRESULT hr = m_pKsTunerPropSet->Set(GUID_THBDA_TUNER, 
+    return m_pKsTunerPropSet->Set(GUID_THBDA_TUNER, 
                               NULL, 
 	  						  &instance_data, sizeof(instance_data),
                               &THBDACmd, sizeof(THBDACmd));
-
-    return SUCCEEDED(hr);
 }
 
 
@@ -38,95 +36,65 @@ BOOL CBdaGraph::THBDA_IOControl( DWORD  dwIoControlCode,
 //************** Basic IOCTL sets  (must support) ***************//
 //***************************************************************//
 
-BOOL CBdaGraph::THBDA_IOCTL_CHECK_INTERFACE_Fun(void)
+HRESULT CBdaGraph::THBDA_IOCTL_CHECK_INTERFACE_Fun(void)
 {
-    BOOL bResult = FALSE;
-    DWORD nBytes = 0;
-
-    bResult = THBDA_IOControl((DWORD) THBDA_IOCTL_CHECK_INTERFACE,
+    DWORD dwBytesReturned = 0;
+    return THBDA_IOControl((DWORD) THBDA_IOCTL_CHECK_INTERFACE,
 									NULL,
 									0,
 									NULL,
 									0,
-									(LPDWORD)&nBytes);
-    if (bResult==FALSE)	{
-		OutputDebugString(TEXT("IOCTL Error: THBDA_IOCTL_CHECK_INTERFACE_Fun failed! \n"));
-	}
-    return bResult;
+									(LPDWORD)&dwBytesReturned);
 }
 
 //***************************************************************//
 //********************* DVB-S (must support)*********************//
 //***************************************************************//
 
-BOOL CBdaGraph::THBDA_IOCTL_SET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA)
+HRESULT CBdaGraph::THBDA_IOCTL_SET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA)
 {	
 	BOOLEAN bResult	= FALSE;
-	DWORD   nBytes  = 0;	
+	DWORD   dwBytesReturned  = 0;	
 
-	bResult = THBDA_IOControl(	(DWORD)THBDA_IOCTL_SET_LNB_DATA,
+	return THBDA_IOControl(	(DWORD)THBDA_IOCTL_SET_LNB_DATA,
 							(LPVOID)pLNB_DATA, 
 							sizeof(LNB_DATA),     
 							NULL, 
 							0,                    
-							(LPDWORD)&nBytes);
-	if (bResult==FALSE)	{
-		OutputDebugString(TEXT("IOCTL Error: THBDA_IOCTL_SET_LNB_DATA_Fun failed! \n"));
-	}
-
-	return bResult;
+							(LPDWORD)&dwBytesReturned);
 }
 
-BOOL CBdaGraph::THBDA_IOCTL_GET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA)
+HRESULT CBdaGraph::THBDA_IOCTL_GET_LNB_DATA_Fun(LNB_DATA *pLNB_DATA)
 {	
 	BOOLEAN bResult	= FALSE;
-	DWORD   nBytes  = 0;	
+	DWORD   dwBytesReturned  = 0;	
 
-	bResult = THBDA_IOControl(	(DWORD)THBDA_IOCTL_GET_LNB_DATA,							  
+	return THBDA_IOControl(	(DWORD)THBDA_IOCTL_GET_LNB_DATA,							  
 							NULL, 
 							0,
 							(LPVOID)pLNB_DATA, 
 							sizeof(LNB_DATA),                       
-							(LPDWORD)&nBytes);
-	if (bResult==FALSE)	{
-		OutputDebugString(TEXT("IOCTL Error: THBDA_IOCTL_GET_LNB_DATA_Fun failed! \n"));
-	}
-
-	return bResult;
+							(LPDWORD)&dwBytesReturned);
 }
 
-BOOL CBdaGraph::THBDA_IOCTL_SET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA)
+HRESULT CBdaGraph::THBDA_IOCTL_SET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA)
 {	
-	BOOLEAN bResult	= FALSE;
-	DWORD   nBytes  = 0;	
-
-	bResult = THBDA_IOControl(	(DWORD)THBDA_IOCTL_SET_DiSEqC,
+	DWORD   dwBytesReturned  = 0;
+	return THBDA_IOControl(	(DWORD)THBDA_IOCTL_SET_DiSEqC,
 							(LPVOID)pDiSEqC_DATA, 
 							sizeof(DiSEqC_DATA),     
 							NULL, 
 							0,                    
-							(LPDWORD)&nBytes);
-	if (bResult==FALSE)	{
-		OutputDebugString(TEXT("IOCTL Error: THBDA_IOCTL_SET_DiSEqC_Fun failed! \n"));
-	}
-
-	return bResult;
+							(LPDWORD)&dwBytesReturned);
 }
 
-BOOL CBdaGraph::THBDA_IOCTL_GET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA)
+HRESULT CBdaGraph::THBDA_IOCTL_GET_DiSEqC_Fun(DiSEqC_DATA *pDiSEqC_DATA)
 {	
-	BOOLEAN bResult	= FALSE;
-	DWORD   nBytes  = 0;	
-
-	bResult = THBDA_IOControl(	(DWORD)THBDA_IOCTL_GET_DiSEqC,							  
+	DWORD   dwBytesReturned  = 0;
+	return THBDA_IOControl(	(DWORD)THBDA_IOCTL_GET_DiSEqC,							  
 							NULL, 
 							0,
 							(LPVOID)pDiSEqC_DATA, 
 							sizeof(DiSEqC_DATA),                       
-							(LPDWORD)&nBytes);
-	if (bResult==FALSE)	{
-		OutputDebugString(TEXT("IOCTL Error: THBDA_IOCTL_GET_DiSEqC_Fun failed! \n"));
-	}
-
-	return bResult;
+							(LPDWORD)&dwBytesReturned);
 }

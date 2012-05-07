@@ -9,7 +9,6 @@
 static const GUID GUID_THBDA_CMD = 
 { 0x255e0082, 0x2017, 0x4b03, { 0x90, 0xf8, 0x85, 0x6a, 0x62, 0xcb, 0x3d, 0x67 } };
 
-
 //{E5644CC4-17A1-4eed-BD90-74FDA1D65423}
 static GUID GUID_THBDA_TUNER = 
 { 0xE5644CC4, 0x17A1, 0x4eed, { 0xBD, 0x90, 0x74, 0xFD, 0xA1, 0xD6, 0x54, 0x23 } };
@@ -554,7 +553,6 @@ typedef enum _CAM_TYPE_ENUM
 
 #define Tuner_Power_ON                      1
 #define Tuner_Power_OFF                     0
-
 
 #define LNB_POWER_OFF                       0
 #define LNB_POWER_ON                        1
