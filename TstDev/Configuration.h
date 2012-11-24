@@ -27,7 +27,8 @@ enum VENDOR_SPECIFIC { PURE_BDA,
 					   COMPRO_BDA,
 					   ANYSEE_BDA,
 					   GNP_BDA,
-					   GENPIX_BDA };
+					   GENPIX_BDA,
+					   NETUP_BDA};
 
 enum S2_ROLLOFF { ROLLOFF_NOT_SET = -1,
 				  ROLLOFF_NOT_DEFINED = 0,

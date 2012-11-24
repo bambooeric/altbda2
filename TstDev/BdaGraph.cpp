@@ -8,6 +8,7 @@
 #include "cmpbda.h"
 #include "asbda.h"
 #include "gnpbda.h"
+#include "netup_bda_api.h"
 
 #define Z(a) memset(&a, 0, sizeof(a))
 
@@ -613,6 +614,15 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		{
 			DebugLog("BDA2: BuildGraph: found Genpix 3dparty DiSEqC interface");
 			*VendorSpecific = VENDOR_SPECIFIC(GNP_BDA);
+		}
+		// Netup
+		DebugLog("BDA2: BuildGraph: checking for Netup DiSEqC interface");
+		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_NetupExtProperties,
+			KSPROPERTY_BDA_NETUP_IOCTL, &supported);
+		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+		{
+			DebugLog("BDA2: BuildGraph: found Netup DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(NETUP_BDA);
 		}
 	}
 
@@ -1937,6 +1947,7 @@ HRESULT CBdaGraph::DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 {
 	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
 	TUNER_COMMAND cmd;
+	Z(cmd);
 
 	if (!len || len>_countof(cmd.DiSEqC_Command))
 		return E_INVALIDARG;
@@ -1947,7 +1958,7 @@ HRESULT CBdaGraph::DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 	
 	CopyMemory(cmd.DiSEqC_Command,DiSEqC_Command,len);
 	cmd.DiSEqC_Length=len;
-	cmd.ForceHighVoltage=TRUE;
+	cmd.ForceHighVoltage=FALSE;
 
 	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_GnpTunerControl,
 								KSPROPERTY_SET_DISEQC,
@@ -1964,13 +1975,14 @@ HRESULT CBdaGraph::DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
 HRESULT CBdaGraph::DVBS_Genpix_ToneBurst(BOOL bToneBurst)
 {
 	CheckPointer(m_pKsTunerFilterPropSet,E_NOINTERFACE);
-	TUNER_COMMAND cmd;
 
 	HRESULT hr = S_OK;
-	
+
+	TUNER_COMMAND cmd;
+	Z(cmd);
 	cmd.DiSEqC_Command[0] = bToneBurst ? 1:0;
 	cmd.DiSEqC_Length = 0;
-	cmd.ForceHighVoltage = TRUE;
+	cmd.ForceHighVoltage = FALSE;
 	hr = m_pKsTunerFilterPropSet->Set(KSPROPERTYSET_GnpTunerControl,
 								KSPROPERTY_SET_DISEQC,
 								NULL, 0,
@@ -1979,6 +1991,34 @@ HRESULT CBdaGraph::DVBS_Genpix_ToneBurst(BOOL bToneBurst)
 		ReportMessage("BDA2: DVBS_Genpix_ToneBurst: success");
 	else
 		ReportMessage("BDA2: DVBS_Genpix_ToneBurst: failed");
+
+	return hr;
+}
+
+HRESULT CBdaGraph::DVBS_Netup_DiSEqC(BYTE len, BYTE *DiSEqC_Command)
+{
+	CheckPointer(m_pKsDemodPropSet,E_NOINTERFACE);
+
+	CheckPointer(DiSEqC_Command,E_POINTER);
+	if (!len) return E_INVALIDARG;
+
+	HRESULT hr = S_OK;
+
+	NETUP_BDA_EXT_CMD cmd;
+	Z(cmd);
+
+	cmd.dwCmd = NETUP_IOCTL_CMD(NETUP_IOCTL_DISEQC_WRITE,0,0);
+	cmd.lpInputBuffer = DiSEqC_Command;
+	cmd.dwInputBufferLength=len;
+
+	hr = m_pKsDemodPropSet->Set(KSPROPSETID_NetupExtProperties,
+								KSPROPERTY_BDA_NETUP_IOCTL,
+								&cmd, sizeof(cmd),
+								&cmd, sizeof(cmd));
+	if(SUCCEEDED(hr))
+		ReportMessage("BDA2: DVBS_Netup_DiSEqC: success");
+	else
+		ReportMessage("BDA2: DVBS_Netup_DiSEqC: failed");
 
 	return hr;
 }

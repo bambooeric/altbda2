@@ -123,6 +123,11 @@ void CConfiguration::ConfCaps()
 		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_RAW;
 		ReportMessage("Genpix BDA extension used !");
 		break;
+	case NETUP_BDA:
+		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
+		conf_params.ConfDiSEqC = DISEQC_RAW;
+		ReportMessage("Netup BDA extension used !");
+		break;
 	case MS_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_8PSK;
 				//conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED;

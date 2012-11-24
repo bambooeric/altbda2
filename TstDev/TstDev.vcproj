@@ -330,6 +330,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\netup_bda_api.h"
+				>
+			</File>
+			<File
 				RelativePath=".\NetworkProvider.h"
 				>
 			</File>

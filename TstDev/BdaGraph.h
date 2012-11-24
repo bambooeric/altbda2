@@ -191,6 +191,7 @@ public:
 	HRESULT DVBS_GenpixOld_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Genpix_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 	HRESULT DVBS_Genpix_ToneBurst(BOOL bToneBurst);
+	HRESULT DVBS_Netup_DiSEqC(BYTE len, BYTE *DiSEqC_Command);
 
 	void SetStreamCallbackProcedure(STR_CB_PROC);
 
