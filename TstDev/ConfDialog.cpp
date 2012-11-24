@@ -68,6 +68,9 @@ BOOL ConfDialog::OnInitDialog()
 	case GENPIX_BDA:
 		m_strBDAExt = "Genpix advanced BDA";
 		break;
+	case NETUP_BDA:
+		m_strBDAExt = "Netup BDA";
+		break;
 	case MS_BDA:
 		m_strBDAExt = "Microsoft BDA";
 		break;
