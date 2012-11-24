@@ -61,7 +61,7 @@ void CConfiguration::ConfCaps()
 	case DW_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
 		conf_params.ConfDiSEqC = DISEQC_TONEBURST | DISEQC_COMMITED | DISEQC_RAW;
-		ReportMessage("DvbWolrld BDA extension used !");
+		ReportMessage("DvbWorld BDA extension used !");
 		break;
 	case BST_BDA:
 		conf_params.ConfMod8PSK = BDA_MOD_NBC_8PSK;
