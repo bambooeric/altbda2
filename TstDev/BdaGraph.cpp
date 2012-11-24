@@ -600,32 +600,6 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		TTDevCat=PREMIUM;
 
 	m_pP1 = GetOutPin(m_pTunerDevice, 0);
-	// let's look if Demod exposes proprietary interfaces
-	if SUCCEEDED(m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet))
-	{
-		DWORD supported;
-		sprintf(text,"BDA2: BuildGraph: Demod exposes proprietary interfaces");
-		ReportMessage(text);
-		// Genpix 3dparty
-		DebugLog("BDA2: BuildGraph: checking for Genpix 3dparty DiSEqC interface");
-		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_GnpBdaExtendedProperty,
-			GNP_BDA_DISEQC, &supported);
-		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
-		{
-			DebugLog("BDA2: BuildGraph: found Genpix 3dparty DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(GNP_BDA);
-		}
-		// Netup
-		DebugLog("BDA2: BuildGraph: checking for Netup DiSEqC interface");
-		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_NetupExtProperties,
-			KSPROPERTY_BDA_NETUP_IOCTL, &supported);
-		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
-		{
-			DebugLog("BDA2: BuildGraph: found Netup DiSEqC interface");
-			*VendorSpecific = VENDOR_SPECIFIC(NETUP_BDA);
-		}
-	}
-
 	if (TTDevCat!=UNKNOWN)
 	{
 		DebugLog("BDA2: BuildGraph: checking for Technotrend DiSEqC interface");
@@ -1021,6 +995,33 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 				DebugLog("BDA2: BuildGraph: found anySee DiSEqC interface");
 				*VendorSpecific = VENDOR_SPECIFIC(ANYSEE_BDA);
 			}
+		}
+	}
+
+	m_pP1 = GetOutPin(m_pTunerDevice, 0);
+	// let's look if Demod exposes proprietary interfaces
+	if SUCCEEDED(m_pP1->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsDemodPropSet))
+	{
+		DWORD supported;
+		sprintf(text,"BDA2: BuildGraph: Demod exposes proprietary interfaces");
+		ReportMessage(text);
+		// Genpix 3dparty
+		DebugLog("BDA2: BuildGraph: checking for Genpix 3dparty DiSEqC interface");
+		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_GnpBdaExtendedProperty,
+			GNP_BDA_DISEQC, &supported);
+		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+		{
+			DebugLog("BDA2: BuildGraph: found Genpix 3dparty DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(GNP_BDA);
+		}
+		// Netup
+		DebugLog("BDA2: BuildGraph: checking for Netup DiSEqC interface");
+		hr = m_pKsDemodPropSet->QuerySupported(KSPROPSETID_NetupExtProperties,
+			KSPROPERTY_BDA_NETUP_IOCTL, &supported);
+		if(SUCCEEDED(hr) && (supported & KSPROPERTY_SUPPORT_SET))
+		{
+			DebugLog("BDA2: BuildGraph: found Netup DiSEqC interface");
+			*VendorSpecific = VENDOR_SPECIFIC(NETUP_BDA);
 		}
 	}
 
