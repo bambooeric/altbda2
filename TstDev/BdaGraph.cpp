@@ -632,7 +632,8 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 	}
 
 	// let's look if Tuner exposes proprietary interfaces
-	if SUCCEEDED(m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet))
+	if SUCCEEDED(m_pP2->QueryInterface(IID_IKsPropertySet, (void **)&m_pKsTunerPropSet) &&
+				*VendorSpecific == VENDOR_SPECIFIC(PURE_BDA))
 	{
 		DWORD supported;
 		sprintf(text,"BDA2: BuildGraph: Tuner exposes proprietary interfaces");

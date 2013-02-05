@@ -87,7 +87,7 @@ BEGIN
             VALUE "FileDescription", "BDA DVB-S/T/C Driver Wrapper for AltDVB"
             VALUE "FileVersion", "0, 2, 0, 19"
             VALUE "InternalName", "Dev_Bda2Driver.int"
-            VALUE "LegalCopyright", "(C) 2008 Diodato, 2010-12 CrazyCat"
+            VALUE "LegalCopyright", "(C) 2008 Diodato, 2010-13 CrazyCat"
             VALUE "OriginalFilename", "Dev_Bda2Driver.int"
             VALUE "ProductName", "Dev_Bda2Driver.int"
             VALUE "ProductVersion", "0, 2, 0, 19"

@@ -7,6 +7,9 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.20 - 2013.02.05 - CrazyCat
+- Fix DVBWorld BDA-extension support (DiSEqC 1.x).
+
 v 0.2.0.19 - 2012.11.24 - CrazyCat
 - Netup BDA-extension support (DiSEqC 1.x).
 - Fix Genpix BDA-extension support (ToneBurst, DiSEqC 1.x).
