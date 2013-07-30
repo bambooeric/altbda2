@@ -106,7 +106,7 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 						}
 						
 						// Technotrend check
-						DEVICE_CAT TTDevCat=UNKNOWN;
+						TTDevCat=UNKNOWN;
 						if ( strstr(tuner_name, BDG2_NAME_S_TUNER) ||
 							strstr(tuner_name, BDG2_NAME_C_TUNER) ||
 							strstr(tuner_name, BDG2_NAME_T_TUNER) ||
@@ -123,7 +123,7 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 							strstr(tuner_name, USB2BDA_DVB_NAME_T_TUNER) ||
 							strstr(tuner_name, USB2BDA_DVB_NAME_S_TUNER_FAKE) )
 							TTDevCat=USB_2;
-						if ( strstr(tuner_name, USB2BDA_DVBS_NAME_PIN) )
+						if ( strstr(tuner_name, USB2BDA_DVBS_NAME_PIN_TUNER) )
 							TTDevCat=USB_2_PINNACLE;
 						if ( strstr(tuner_name, USB2BDA_DSS_NAME_TUNER) )
 							TTDevCat=USB_2_DSS;
@@ -131,7 +131,7 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 							TTDevCat=PREMIUM;
 
 						IPin* pPin = GetOutPin(pFilter, 0);
-						if ( pPin && (TTDevCat!=UNKNOWN) )
+						if ( pPin && (TTDevCat!=UNKNOWN) && (TTDevCat!=USB_2_PINNACLE) )
 						{
 							DebugLog("BDA2: DeviceDescription: Check Technotrend device info");
 							REGPINMEDIUM Medium;
@@ -178,6 +178,8 @@ HRESULT CBdaGraph::GetNetworkTuners(struct NetworkTuners *Tuners)
 BOOL CBdaGraph::DVBS_Technotrend_GetProdName( char* pszProdName, size_t len )
 {
 	if (INVALID_HANDLE_VALUE==hTT)
+		return FALSE;
+	if (TTDevCat==USB_2_PINNACLE)
 		return FALSE;
 	TS_FilterNames TTInfo;
 	TYPE_RET_VAL rc = bdaapiGetDevNameAndFEType (hTT, &TTInfo);
@@ -575,7 +577,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 	*VendorSpecific = VENDOR_SPECIFIC(PURE_BDA);
 
 	// Technotrend check
-	DEVICE_CAT TTDevCat=UNKNOWN;
+	TTDevCat=UNKNOWN;
 	if ( strstr(receiver_name, BDG2_NAME_S_TUNER) ||
 		strstr(receiver_name, BDG2_NAME_C_TUNER) ||
 		strstr(receiver_name, BDG2_NAME_T_TUNER) ||
@@ -592,7 +594,7 @@ HRESULT CBdaGraph::BuildGraph(int selected_device_enum, enum VENDOR_SPECIFIC *Ve
 		strstr(receiver_name, USB2BDA_DVB_NAME_T_TUNER) ||
 		strstr(receiver_name, USB2BDA_DVB_NAME_S_TUNER_FAKE) )
 		TTDevCat=USB_2;
-	if ( strstr(receiver_name, USB2BDA_DVBS_NAME_PIN) )
+	if ( strstr(receiver_name, USB2BDA_DVBS_NAME_PIN_TUNER) )
 		TTDevCat=USB_2_PINNACLE;
 	if ( strstr(receiver_name, USB2BDA_DSS_NAME_TUNER) )
 		TTDevCat=USB_2_DSS;

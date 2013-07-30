@@ -7,6 +7,9 @@ will create a new one with default values.
 S2 Pilot and S2 Roll Off:
 these values are for the Haupppauge drivers and practically should not be changed
 
+v 0.2.0.21 - 2013.07.31 - CrazyCat
+- Fix Pinnacle 4xxe support (Technotrend BDA).
+
 v 0.2.0.20 - 2013.02.05 - CrazyCat
 - Fix DVBWorld BDA-extension support (DiSEqC 1.x).
 

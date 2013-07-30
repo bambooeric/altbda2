@@ -226,6 +226,7 @@ private:
 	CDVBNetworkProviderFilter *pNetworkProviderInstance; // network provider object
 
 	MSG_CB_PROC message_callback;
+	DEVICE_CAT TTDevCat;
 	HANDLE hTT, hDW;
 	BOOL bTVDLL;
 	int iTVIdx;
